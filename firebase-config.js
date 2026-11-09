@@ -1,7 +1,7 @@
-// Configuração web do Firebase — projeto avaliacao-edfisica.
-// Esta configuração é pública no aplicativo; a proteção dos dados depende das regras do Firestore.
+
+// Configuração web do Firebase
 export const firebaseConfig = {
-  apiKey: "AIzaSyDd0b3s2NWGeA4T5DizxFAjlpiisrXEyuY",,
+  apiKey: "AIzaSyDd0b3s2NWGeA4T5DizxFAjlpiisrXEyuY",
   authDomain: "avaliacao-edfisica.firebaseapp.com",
   projectId: "avaliacao-edfisica",
   storageBucket: "avaliacao-edfisica.firebasestorage.app",
