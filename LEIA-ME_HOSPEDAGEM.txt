@@ -1,0 +1,62 @@
+MOVIMENTO & SAÚDE — PACOTE PARA HOSPEDAGEM ONLINE
+
+ARQUIVOS
+- index.html: aplicativo.
+- firebase-config.js: configuração que você preencherá com os dados do seu Firebase.
+- firestore.rules: regras de segurança do banco de dados.
+
+O QUE ESTA VERSÃO FAZ
+- Inclui o teste de sentar e alcançar.
+- Para 6 a 17 anos, aplica as tabelas de desempenho e os pontos de corte de saúde do PROESP-Br 2021.
+- Para 20 a 69 anos, aplica a referência adulta CSEP-PATH, que exige banco/flexômetro com a linha dos pés em 26 cm.
+- Para 18–19 anos, menores de 6 e 70+, registra a medida, mas não inventa uma classificação.
+- Mostra interpretação, resumo e recomendações educativas no relatório.
+- Sincroniza registros entre dispositivos quando o usuário entra na mesma conta Firebase.
+- Exige confirmação de autorização institucional e das salvaguardas aplicáveis antes de salvar a avaliação.
+- Permite gerar QR/link de relatório somente de leitura, após confirmação de autorização de compartilhamento, com expiração em 30 dias e revogação pelo responsável.
+- Os registros antigos guardados no navegador podem ser importados pelo botão “Importar dados deste dispositivo”.
+
+1) CRIAR O PROJETO FIREBASE
+1. Acesse https://console.firebase.google.com/ e crie um projeto chamado, por exemplo, movimento-saude.
+2. No painel do projeto, clique em adicionar app Web (ícone </>) e registre o app.
+3. Copie os dados do objeto firebaseConfig exibido pelo Firebase.
+4. Abra firebase-config.js e substitua todos os valores PREENCHER_... pelos valores reais. Não compartilhe senha, chave de serviço ou arquivo de conta de serviço. A configuração web (apiKey, authDomain, projectId etc.) é feita para estar no navegador; as regras do banco protegem os dados.
+
+2) ATIVAR LOGIN
+1. No Firebase Console, abra Authentication > Sign-in method.
+2. Ative “E-mail/senha”.
+3. Em Authentication > Settings > Authorized domains, confirme que o domínio do GitHub Pages está autorizado (por exemplo: SEU-USUARIO.github.io).
+4. O aplicativo permite criar uma conta com e-mail e senha. Use a mesma conta no Chromebook e no celular para ver os mesmos registros.
+
+3) CRIAR BANCO E PUBLICAR REGRAS
+1. Abra Firestore Database e crie o banco de dados. Para reduzir a latência no Brasil, escolha a região southamerica-east1 (São Paulo), se disponível para o projeto.
+2. Na área Rules do Firestore, substitua as regras de teste pelo conteúdo de firestore.rules deste pacote e clique em Publish.
+3. Não use regras abertas como “allow read, write: if true”. Isso exporia dados pessoais e de saúde.
+
+4) HOSPEDAR NO GITHUB PAGES
+1. No GitHub, crie um repositório chamado movimento-saude-antropometria.
+2. Envie index.html, firebase-config.js e firestore.rules para a raiz do repositório (não coloque dentro de outra pasta).
+3. Abra Settings > Pages. Em Build and deployment, escolha Deploy from a branch, selecione a branch main e a pasta /(root). Salve.
+4. Aguarde a publicação e abra o endereço mostrado pelo GitHub Pages.
+5. No primeiro acesso, crie sua conta. Em seguida, entre com a mesma conta no Chromebook e no celular.
+
+5) COMO FUNCIONA O QR CODE
+1. Salve uma avaliação e abra seu relatório.
+2. Marque a caixa confirmando que a pessoa avaliada (ou responsável legal, quando menor de idade) autorizou o compartilhamento.
+3. Clique em “Gerar QR Code”.
+4. A pessoa escaneia o QR e abre uma cópia de leitura do relatório. Não precisa criar conta.
+5. O link expira em 30 dias. Você pode revogá-lo pelo botão “Revogar link atual”. Se o QR for encaminhado a terceiros, eles também poderão visualizar o relatório enquanto o link estiver ativo.
+
+6) IMPORTAR DADOS ANTIGOS
+Os dados da versão anterior estão no armazenamento local do navegador. Abra a versão nova no mesmo navegador/dispositivo em que os registros antigos existem, entre na conta e clique em “Importar dados deste dispositivo”. Depois disso, eles estarão disponíveis nos outros dispositivos. Repita a importação em cada aparelho que tenha registros locais diferentes. Faça também uma cópia CSV/JSON antes da migração.
+
+PRIVACIDADE E CUIDADOS
+- O login protege os registros privados por conta; cada usuário só vê a própria coleção.
+- O QR é um link de acesso: qualquer pessoa que o possua pode ver a cópia até expirar ou ser revogada. Compartilhe somente com autorização.
+- Para crianças e adolescentes, observe as regras da instituição e a autorização do responsável legal para coleta e compartilhamento de dados pessoais sensíveis.
+- Evite guardar dados que não sejam necessários. Não use o modo local em computador compartilhado sem encerrar a sessão e não deixe a conta conectada em dispositivos públicos.
+- O app é uma ferramenta educativa e de acompanhamento; não realiza diagnóstico médico.
+
+REFERÊNCIAS DA FLEXIBILIDADE
+- PROESP-Br. Manual de testes e avaliação, 2021: protocolo no solo e tabelas para 6–17 anos.
+- CSEP-PATH Resource Manual, 2013: referência adulta de 20–69 anos, com caixa de sentar e alcançar calibrada em 26 cm. Não comparar diretamente resultados obtidos com os dois protocolos.

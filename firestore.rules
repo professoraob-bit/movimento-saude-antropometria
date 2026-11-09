@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Cada conta só pode consultar e alterar os próprios registros.
+    match /usuarios/{uid}/avaliacoes/{avaliacaoId} {
+      allow read, create, update, delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // O relatório compartilhado só pode ser obtido por quem conhece o token.
+    // Não é permitido listar a coleção. O acesso expira automaticamente pela regra.
+    match /relatoriosCompartilhados/{token} {
+      allow create: if request.auth != null
+                    && request.resource.data.ownerUid == request.auth.uid
+                    && request.resource.data.active == true
+                    && request.resource.data.expiresAt is timestamp;
+      allow get: if resource.data.active == true
+                 && resource.data.expiresAt is timestamp
+                 && resource.data.expiresAt > request.time;
+      allow list: if false;
+      allow update: if request.auth != null
+                    && resource.data.ownerUid == request.auth.uid
+                    && request.resource.data.ownerUid == resource.data.ownerUid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active'])
+                    && request.resource.data.active == false;
+      allow delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+    }
+  }
+}

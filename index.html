@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Movimento & Saúde — Avaliação Antropométrica</title>
+<style>
+:root{--navy:#123b62;--teal:#16a6a1;--orange:#f4a340;--green:#8bcb83;--bg:#f2f6fa;--ink:#193247}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+header{background:linear-gradient(120deg,#102f50,var(--navy));color:#fff;padding:24px max(18px,calc((100% - 1100px)/2));}
+header h1{margin:0;font-size:clamp(23px,4vw,34px);letter-spacing:.04em}header p{margin:6px 0 0;color:#c9e5ee}
+main{max-width:1100px;margin:22px auto;padding:0 16px 40px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+button,.tab{border:0;border-radius:10px;padding:11px 15px;font-weight:650;cursor:pointer;background:var(--navy);color:white}
+.tab{background:#dce7ef;color:var(--navy)}.tab.active{background:var(--teal);color:#fff}
+.panel{background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 5px 22px #183b5510}
+h2{font-size:20px;color:var(--navy);margin:0 0 14px}h3{margin:0 0 8px;color:var(--navy)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.wide{grid-column:1/-1}
+label{display:block;font-weight:650;font-size:13px;margin-bottom:5px}
+input,select{width:100%;padding:11px;border:1px solid #cbd7e1;border-radius:9px;background:white;color:var(--ink);font:inherit}
+small,.muted{color:#60788a}.hint{font-size:12px;color:#60788a;margin-top:4px}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}.secondary{background:#e4edf3;color:var(--navy)}.orange{background:var(--orange);color:#34230c}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{background:#edf6f7;border-radius:12px;padding:13px}.metric b{display:block;font-size:25px;color:var(--navy)}.metric span{font-size:12px;color:#587080}.metric.green{background:#e5f6ed;border:1px solid #a7dfbd}.metric.green b{color:#167347}.metric.orange{background:#fff1dc;border:1px solid #f4c77e}.metric.orange b{color:#9a5700}.metric.red{background:#ffebeb;border:1px solid #f1b0b0}.metric.red b{color:#a52b2b}.metric.teal{background:#e2f5f4;border:1px solid #a4dfdc}.metric.teal b{color:#087a76}.status{padding:14px;border-radius:12px;margin:12px 0;font-weight:700}.status.good{background:#e5f6ed;color:#12683e;border-left:5px solid #28a56b}.status.warn{background:#fff1dc;color:#8c5000;border-left:5px solid #efa52c}.status.info{background:#e5f3fa;color:#174d70;border-left:5px solid #4098c4}
+.report{background:linear-gradient(145deg,#102f50,#174e70);color:white;border-radius:17px;padding:22px;overflow:hidden}.report h2,.report h3{color:white}.report .metric{background:#ffffff18;color:white}.report .metric b{color:white}.report .metric span{color:#d8eaf0}
+.notice{padding:12px;border-radius:10px;background:#fff5e6;border-left:4px solid var(--orange);font-size:13px}
+.good{background:#e9f7f2;border-left-color:var(--teal)}table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:9px;border-bottom:1px solid #e5edf2}th{color:var(--navy)}
+.hidden{display:none}.pill{display:inline-block;background:#e4f5f2;color:#147d78;padding:4px 8px;border-radius:99px;font-size:12px;font-weight:700}
+footer{font-size:12px;color:#60788a;text-align:center;margin:20px}
+@media(max-width:650px){.grid{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,1fr)}main{margin-top:12px}.panel{padding:15px}}
+@media print{body{background:#fff}.no-print,header,.tabs{display:none!important}main{margin:0;max-width:none;padding:0}.panel{box-shadow:none}.report{print-color-adjust:exact;-webkit-print-color-adjust:exact}.report-wrap{display:block!important}}
+
+.bmi-diagnosis{margin:16px 0;padding:18px;border-radius:16px;background:#fff1d8;border:2px solid #f0a43a;color:#263746;box-shadow:0 5px 18px #00000018}
+.bmi-diagnosis .eyebrow{font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#8a4d08}
+.bmi-diagnosis .diagnosis-word{display:inline-block;margin-top:7px;padding:8px 15px;border-radius:10px;background:#f2a23a;color:#241a0c;font-size:clamp(22px,4vw,30px);font-weight:950;letter-spacing:.02em}
+.bmi-diagnosis p{margin:8px 0 0;color:#354657}
+.flex-instructions{padding:13px;border-radius:11px;background:#eaf5f8;border-left:4px solid var(--teal);font-size:13px;margin-bottom:13px}.flex-preview{padding:12px;border-radius:11px;background:#edf6f7;margin-top:12px;font-size:13px}.flex-preview strong{color:var(--navy)}
+
+
+.auth-panel{max-width:620px;margin:22px auto}.auth-bar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding:12px 15px;background:#e7f1f5;border-radius:12px}.auth-bar small{display:block}.share-panel{margin-top:14px}.share-layout{display:flex;gap:20px;align-items:center;flex-wrap:wrap}.qr-box{background:white;border:1px solid #dce5eb;border-radius:12px;padding:12px;min-width:244px;min-height:244px;display:flex;align-items:center;justify-content:center}.share-note{font-size:13px;color:#5a7182}.auth-status{font-size:13px;margin-top:9px;color:#537184}.danger{background:#a52b2b;color:white}.public-meta{padding:12px;border-radius:10px;background:#eaf5f8;color:#174d70;margin-bottom:14px}.summary-card{margin:18px 0;padding:16px;border-radius:13px;background:#f1f7fa;color:#203a4b;border-left:5px solid #16a6a1}.summary-card h3{color:#123b62}.summary-card ul{margin:8px 0 0;padding-left:20px}.summary-card li{margin:5px 0}
+@media(max-width:650px){.auth-bar{align-items:flex-start}.share-layout{flex-direction:column;align-items:stretch}.qr-box{align-self:center}}
+@media print{.auth-bar,.share-panel,#loginPanel,#publicMeta,.no-print{display:none!important}}
+
+</style>
+</head>
+<body>
+<header><h1>🏃 MOVIMENTO & SAÚDE</h1><p>Sistema de avaliação antropométrica · Português do Brasil</p></header>
+<main>
+<section id="loginPanel" class="panel auth-panel hidden">
+  <h2>Acesso ao Movimento & Saúde</h2>
+  <p class="muted">Entre com sua conta para sincronizar as avaliações entre Chromebook, celular e outros dispositivos.</p>
+  <div id="firebaseLoginFields">
+    <div class="grid">
+      <div class="wide"><label for="authEmail">E-mail</label><input id="authEmail" type="email" autocomplete="username" placeholder="seuemail@exemplo.com"></div>
+      <div class="wide"><label for="authPassword">Senha</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Sua senha"></div>
+    </div>
+    <div class="actions">
+      <button id="entrarConta">Entrar</button><button id="criarConta" class="secondary">Criar conta</button><button id="redefinirSenha" class="secondary">Esqueci a senha</button>
+    </div>
+  </div>
+  <div id="cloudSetupNotice" class="notice hidden">A sincronização ainda não foi configurada. Edite o arquivo <strong>firebase-config.js</strong> com os dados do seu projeto Firebase e publique as regras do Firestore. Enquanto isso, você pode testar em modo local, mas os dados ficarão apenas neste dispositivo.</div>
+  <div class="actions"><button id="usarLocal" class="orange">Abrir em modo local</button></div>
+  <p id="authMessage" class="auth-status" aria-live="polite"></p>
+</section>
+<div id="appShell" class="hidden">
+<div class="auth-bar no-print"><div><strong id="statusConta">Modo local</strong><small id="statusSincronizacao">Os dados ficam neste dispositivo.</small></div><div class="actions" style="margin:0"><button id="importarLocais" class="secondary hidden">Importar dados deste dispositivo</button><button id="sairConta" class="secondary hidden">Sair</button></div></div>
+<div id="appNotice" class="notice hidden"></div>
+<div class="tabs no-print">
+<button class="tab active" data-tab="cadastro">Nova avaliação</button>
+<button class="tab" data-tab="historico">Histórico</button>
+<button class="tab" data-tab="relatorio">Relatório</button>
+</div>
+<section id="cadastro" class="tabpage">
+<div class="panel">
+<h2>1. Identificação pessoal</h2>
+<div class="grid">
+<div><label for="nome">Nome completo *</label><input id="nome" required placeholder="Nome da pessoa avaliada"></div>
+<div><label for="nascimento">Data de nascimento *</label><input id="nascimento" type="date" required></div>
+<div><label for="sexo">Sexo de referência das curvas/tabelas *</label><select id="sexo"><option value="">Selecione</option><option value="Feminino">Feminino</option><option value="Masculino">Masculino</option></select><div class="hint">Usado para selecionar a referência antropométrica apropriada.</div></div>
+<div><label for="data">Data da avaliação</label><input id="data" type="date"></div>
+</div>
+</div>
+<div class="panel">
+<h2>2. Vínculo institucional</h2>
+<div class="grid">
+<div><label for="perfil">Tipo de cadastro *</label><select id="perfil"><option value="Aluno">Aluno</option><option value="Professor">Professor</option></select></div>
+<div><label for="instituicao">Instituição de ensino</label><input id="instituicao" value="Escola Zulmira de Novais" readonly></div>
+<div id="campoDisciplina" class="hidden"><label for="disciplina">Disciplina ministrada *</label><input id="disciplina" placeholder="Ex.: Educação Física"></div>
+<div id="camposAluno"><div class="grid">
+<div><label for="serie">Série *</label><select id="serie"><option value="6º ano">6º ano</option><option value="7º ano">7º ano</option><option value="8º ano">8º ano</option><option value="9º ano">9º ano</option></select></div>
+<div><label for="turma">Turma *</label><select id="turma"><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option></select></div>
+<div class="wide"><label for="turno">Turno</label><select id="turno"><option value="Manhã">Manhã</option><option value="Tarde">Tarde</option></select></div>
+</div></div>
+</div>
+</div>
+<div class="panel">
+<h2>3. Medidas antropométricas</h2>
+<div class="grid">
+<div><label for="massa">Massa corporal (kg) *</label><input id="massa" type="number" min="0" step=".1" placeholder="Ex.: 70,5"></div>
+<div><label for="estatura">Estatura (cm) *</label><input id="estatura" type="number" min="0" step=".1" placeholder="Ex.: 175"></div>
+<div class="wide"><label for="gordura">Percentual de gordura corporal (%)</label><input id="gordura" type="number" min="0" max="100" step=".1" placeholder="Ex.: 18,5"><div class="hint">Informe o resultado obtido pelo método utilizado. A interpretação considera idade e sexo, mas também depende do método.</div></div><div class="wide"><label for="metodoGordura">Método de avaliação da gordura corporal</label><select id="metodoGordura"><option value="">Não informado</option><option>Bioimpedância</option><option>Dobras cutâneas</option><option>DXA</option><option>Outro</option></select></div>
+</div>
+</div>
+<div class="panel">
+<h2>4. Atividade física habitual</h2>
+<div class="grid">
+<div><label for="intensidade">Intensidade predominante</label><select id="intensidade"><option>Moderada</option><option>Vigorosa</option><option>Leve</option></select></div>
+<div><label for="tipoAtividade">Tipo de atividade</label><input id="tipoAtividade" placeholder="Ex.: caminhada, futebol, musculação"></div>
+<div><label for="dias">Dias por semana</label><input id="dias" type="number" min="0" max="7" step="1" value="3"></div>
+<div><label for="minutos">Minutos por dia (média)</label><input id="minutos" type="number" min="0" step="1" value="30"></div><div class="wide"><label for="fortalecimento">Dias por semana com fortalecimento muscular</label><input id="fortalecimento" type="number" min="0" max="7" step="1" value="0"><div class="hint">Ex.: musculação, exercícios com peso corporal ou elásticos.</div></div>
+</div>
+</div>
+<div class="panel">
+<h2>5. Avaliação da flexibilidade — sentar e alcançar</h2>
+<div id="flexibilidadeInstrucoes" class="flex-instructions">Informe a data de nascimento para carregar o protocolo e a referência adequados à idade.</div>
+<div class="grid">
+<div><label for="flexibilidade1">Tentativa 1 (cm)</label><input id="flexibilidade1" type="number" step="0.1" placeholder="Ex.: 28,5"></div>
+<div><label for="flexibilidade2">Tentativa 2 (cm)</label><input id="flexibilidade2" type="number" step="0.1" placeholder="Ex.: 30,0"></div>
+</div>
+<div id="flexibilidadePreview" class="flex-preview">O melhor resultado entre as duas tentativas será utilizado para a classificação, quando houver tabela de referência para a faixa etária.</div>
+<p class="hint">Registre as medidas em centímetros, com uma casa decimal. Não misture resultados obtidos com protocolos ou equipamentos diferentes.</p>
+</div>
+<div class="notice" style="margin-top:15px"><strong>Privacidade:</strong> os dados de medidas corporais e composição corporal podem revelar informações de saúde. Registre apenas dados necessários e use o sistema conforme a autorização e as orientações da instituição. Para menores de idade, observe as salvaguardas e o melhor interesse da criança ou adolescente.</div>
+<div style="margin-top:12px"><label style="display:flex;gap:9px;align-items:flex-start;font-weight:500"><input id="autorizacaoDados" type="checkbox" style="width:auto;margin-top:3px"> Confirmo que esta avaliação está autorizada para a finalidade educativa/institucional e que foram observadas as autorizações e salvaguardas necessárias para a pessoa avaliada.</label></div>
+<div class="actions no-print"><button id="salvar">Calcular e salvar avaliação</button><button class="secondary" id="limpar" type="button">Limpar formulário</button></div>
+<p class="hint">* Campos obrigatórios. No modo conectado, os registros são sincronizados na nuvem; no modo local, ficam apenas neste dispositivo.</p>
+</section>
+
+<section id="historico" class="tabpage hidden">
+<div class="panel">
+<h2>Histórico de avaliações</h2>
+<p class="muted">Consulte registros salvos neste navegador. Cada nova avaliação é adicionada ao histórico.</p>
+<div class="actions no-print"><button id="exportar">Exportar CSV</button><button class="secondary" id="backup">Baixar cópia de segurança (JSON)</button></div>
+<div id="tabelaHistorico"></div>
+</div>
+</section>
+
+<section id="relatorio" class="tabpage hidden">
+<div class="panel report-wrap">
+<div id="relatorioConteudo" class="report"><h2>Seu relatório aparecerá aqui</h2><p>Preencha e salve uma avaliação para visualizar o relatório individual.</p></div>
+<div class="actions no-print"><button id="imprimir" class="orange">Imprimir / salvar em PDF</button></div>
+<div id="sharePanel" class="panel share-panel no-print hidden">
+  <h3>Compartilhar este relatório</h3>
+  <p class="share-note">Gere um QR Code para que a pessoa avaliada abra uma cópia somente de leitura do relatório. O link vale por 30 dias e pode ser revogado. Qualquer pessoa que tenha o link poderá visualizar a cópia compartilhada.</p>
+  <label style="display:flex;gap:9px;align-items:flex-start;font-weight:500"><input id="consentShare" type="checkbox" style="width:auto;margin-top:3px"> Confirmo que a pessoa avaliada (ou seu responsável legal, quando menor de idade) autorizou o compartilhamento deste relatório por link/QR Code.</label>
+  <div class="actions"><button id="gerarQR">Gerar QR Code de compartilhamento</button><button id="revogarQR" class="danger hidden">Revogar link atual</button></div>
+  <div id="shareResult" class="hidden">
+    <div class="share-layout"><div id="qrBox" class="qr-box" aria-label="QR Code do relatório"></div><div style="flex:1;min-width:220px"><strong>Relatório pronto para compartilhar</strong><p id="shareExpiry" class="share-note"></p><p><a id="shareUrl" href="#" target="_blank" rel="noopener">Abrir relatório compartilhado</a></p><div class="actions"><button id="copiarShare" class="secondary">Copiar link</button><button id="baixarQR" class="secondary">Baixar QR Code</button></div></div></div>
+  </div>
+  <p id="shareMessage" class="auth-status" aria-live="polite"></p>
+</div>
+<p class="hint no-print">Na janela de impressão, escolha “Salvar como PDF”. A versão PNG poderá ser acrescentada numa próxima etapa.</p>
+</div>
+</section>
+<footer>Movimento & Saúde · Ferramenta educativa. Não substitui avaliação ou diagnóstico profissional.</footer>
+</div>
+<section id="publicShare" class="panel hidden">
+  <div id="publicMeta" class="public-meta">Relatório compartilhado</div>
+  <div id="relatorioCompartilhadoConteudo" class="report"><h2>Carregando relatório...</h2></div>
+  <div class="actions no-print"><button id="imprimirPublico" class="orange">Imprimir / salvar em PDF</button></div>
+</section>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
+import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, updateDoc, Timestamp, serverTimestamp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
+import { firebaseConfig } from "./firebase-config.js";
+
+const $=id=>document.getElementById(id);
+const fields=['nome','nascimento','sexo','data','perfil','instituicao','disciplina','serie','turma','turno','massa','estatura','gordura','metodoGordura','intensidade','tipoAtividade','dias','minutos','fortalecimento','flexibilidade1','flexibilidade2'];
+const today=new Date();
+function dataLocalISO(d=new Date()){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}
+$('data').value=dataLocalISO(today);
+function num(id){return Number($(id).value.replace(',','.'))}
+function idade(data, dataReferencia=$('data')?.value || dataLocalISO()){if(!data)return null;let d=new Date(data+'T12:00:00'),n=new Date((dataReferencia||dataLocalISO())+'T12:00:00');let a=n.getFullYear()-d.getFullYear();if(n.getMonth()<d.getMonth()||(n.getMonth()===d.getMonth()&&n.getDate()<d.getDate()))a--;return a}
+function registrosLocalInicial(){try{return JSON.parse(localStorage.getItem('movSaudeAvaliacoes')||'[]')}catch(e){return []}}
+function salvarRegistrosLocalInicial(v){localStorage.setItem('movSaudeAvaliacoes',JSON.stringify(v))}
+function mudarPerfil(){let prof=$('perfil').value==='Professor';$('instituicao').value='Escola Zulmira de Novais';$('campoDisciplina').classList.toggle('hidden',!prof);$('camposAluno').classList.toggle('hidden',prof)}
+$('perfil').addEventListener('change',mudarPerfil);mudarPerfil();
+function referenciaIMC(i){if(i<5)return 'OMS: padrões de crescimento infantil (0–5 anos); requer cálculo por escore-Z.';if(i<20)return 'OMS 2007: IMC por idade e sexo (5–19 anos); requer escore-Z.';return 'Adultos: classificação de IMC para adultos.'}
+function classeAdulto(imc){if(imc<18.5)return 'Abaixo do peso';if(imc<25)return 'Faixa de referência (eutrofia)';if(imc<30)return 'Sobrepeso';if(imc<35)return 'Obesidade grau I';if(imc<40)return 'Obesidade grau II';return 'Obesidade grau III'}
+
+// Limites das categorias de desempenho do PROESP-Br 2021 (cm), por idade e sexo.
+// Cada linha contém os inícios de: Razoável, Bom, Muito bom e Excelência.
+const flexPROESP={
+ Masculino:{
+  6:[34.3,41.3,50.4,74.0],7:[33.3,39.7,48.0,68.5],8:[32.3,38.4,46.0,64.0],
+  9:[31.3,37.2,44.6,61.5],10:[30.4,36.5,43.9,60.8],11:[29.8,35.7,43.0,59.3],
+  12:[29.4,35.2,42.2,57.9],13:[29.1,35.3,42.9,60.6],14:[28.7,35.7,44.8,67.2],
+  15:[28.4,36.4,47.0,73.8],16:[28.4,36.8,48.1,76.6],17:[28.7,36.9,48.0,76.2]
+ },
+ Feminino:{
+  6:[37.0,43.9,52.6,73.4],7:[35.3,41.9,50.0,69.1],8:[33.8,40.1,47.9,65.7],
+  9:[32.4,38.7,46.3,63.6],10:[31.3,37.6,45.4,62.6],11:[30.6,36.8,44.3,61.0],
+  12:[30.4,36.4,43.7,60.1],13:[30.3,36.7,44.6,62.9],14:[30.1,37.3,46.6,69.5],
+  15:[29.6,37.9,48.9,77.1],16:[29.2,37.9,49.6,80.1],17:[28.9,37.5,49.0,79.0]
+ }
+};
+// Pontos de corte de saúde do PROESP-Br 2021: abaixo = zona de risco; igual/acima = zona saudável.
+const flexPROESPSaude={
+ Masculino:[29,29,32.5,29,29.5,29.5,29.5,26.5,30.5,31,34.5,34],
+ Feminino:[40.5,40.5,39.5,35,36.5,34.5,39.5,38.5,38.5,38.5,39.5,39.5]
+};
+// Referência para adultos: CSEP-PATH, 20–69 anos, flexômetro com linha dos pés em 26 cm.
+// Os quatro limites são os inícios das categorias Regular, Bom, Muito bom e Excelente.
+const flexAdultoCSEP={
+ Masculino:{'20-29':[25,30,34,40],'30-39':[23,28,33,38],'40-49':[18,24,29,35],'50-59':[16,24,28,35],'60-69':[15,20,25,33]},
+ Feminino:{'20-29':[28,33,37,41],'30-39':[27,32,36,41],'40-49':[25,30,34,38],'50-59':[25,30,33,39],'60-69':[23,27,31,35]}
+};
+function faixaAdultoCSEP(i){if(i>=20&&i<=29)return '20-29';if(i>=30&&i<=39)return '30-39';if(i>=40&&i<=49)return '40-49';if(i>=50&&i<=59)return '50-59';if(i>=60&&i<=69)return '60-69';return null}
+function categoriaPorLimites(valor,limites,nomes=['Fraco','Razoável','Bom','Muito bom','Excelência']){if(valor<limites[0])return nomes[0];if(valor<limites[1])return nomes[1];if(valor<limites[2])return nomes[2];if(valor<limites[3])return nomes[3];return nomes[4]}
+function melhorFlexibilidade(r){const a=r.flexibilidade1!==''&&r.flexibilidade1!=null?Number(String(r.flexibilidade1).replace(',','.')):null;const b=r.flexibilidade2!==''&&r.flexibilidade2!=null?Number(String(r.flexibilidade2).replace(',','.')):null;const validos=[a,b].filter(v=>v!==null&&Number.isFinite(v)&&v>=0);return validos.length?Math.max(...validos):null}
+function avaliarFlexibilidade(r){
+ const valor=r.flexibilidadeMelhor??melhorFlexibilidade(r),i=Number(r.idade),sexo=r.sexo;
+ if(valor===null||!Number.isFinite(valor))return {registrado:false,valor:null,titulo:'Não informado',classe:'info',explicacao:'O teste de flexibilidade ainda não foi registrado.'};
+ if(i>=6&&i<=17&&flexPROESP[sexo]){
+  const limites=flexPROESP[sexo][i],corte=flexPROESPSaude[sexo][i-6];
+  if(!limites||corte==null)return {registrado:true,valor,referencia:'PROESP-Br 2021',titulo:'Sem tabela para esta idade',classe:'info',explicacao:'Não foi localizada uma linha de referência para esta idade.'};
+  const desempenho=categoriaPorLimites(valor,limites);
+  const saude=valor>=corte?'Zona saudável':'Zona de risco à saúde';
+  return {registrado:true,valor,referencia:'PROESP-Br 2021',titulo:desempenho,classe:valor>=corte?'good':'warn',desempenho,saude,corte,explicacao:`Classificação de desempenho: ${desempenho}. Referência de saúde: ${saude.toLowerCase()} (ponto de corte para ${sexo.toLowerCase()} de ${i} anos: ${corte.toFixed(1).replace('.',',')} cm).`};
+ }
+ if(i>=20&&i<=69&&flexAdultoCSEP[sexo]){
+  const faixa=faixaAdultoCSEP(i),limites=flexAdultoCSEP[sexo][faixa];
+  const desempenho=categoriaPorLimites(valor,limites,['Fraco','Regular','Bom','Muito bom','Excelente']);
+  return {registrado:true,valor,referencia:'CSEP-PATH (adultos, 20–69 anos)',titulo:desempenho,classe:desempenho==='Fraco'?'warn':'good',desempenho,explicacao:`Classificação de referência para ${sexo.toLowerCase()}, faixa etária de ${faixa} anos. Esta tabela utiliza flexômetro com a linha dos pés posicionada em 26 cm.`};
+ }
+ return {registrado:true,valor,referencia:'Sem tabela aplicável',titulo:'Resultado registrado — sem classificação',classe:'info',explicacao:i>=18&&i<=19?'A tabela PROESP-Br termina aos 17 anos e a referência adulta utilizada começa aos 20 anos. O resultado foi registrado, mas não classificado.':(i>=70?'As referências selecionadas não abrangem pessoas com 70 anos ou mais. O resultado foi registrado, mas não classificado.':'As tabelas selecionadas não abrangem esta idade. O resultado foi registrado, mas não classificado.')};
+}
+function atualizarInstrucoesFlexibilidade(){
+ const i=idade($('nascimento').value,$('data').value),box=$('flexibilidadeInstrucoes');
+ if(i>=6&&i<=17){box.innerHTML='<strong>Protocolo PROESP-Br — 6 a 17 anos (sem banco de Wells).</strong><br>Estenda uma fita métrica no chão. Na marca de 38 cm, fixe uma fita adesiva de 30 cm perpendicular à escala. O estudante fica descalço, com os calcanhares junto à marca de 38 cm e separados 30 cm. Mantendo os joelhos estendidos e as mãos sobrepostas, inclina-se lentamente e alcança à frente. Faça duas tentativas e registre a maior distância.';}
+ else if(i>=20&&i<=69){box.innerHTML='<strong>Protocolo adulto CSEP-PATH — 20 a 69 anos (flexômetro).</strong><br>Use um banco de sentar e alcançar (flexômetro) cuja linha dos pés corresponda a 26 cm na escala. A pessoa fica descalça, sentada, pernas estendidas e solas dos pés apoiadas no equipamento, com os pés separados aproximadamente 15 cm. Com as mãos sobrepostas e joelhos estendidos, alcança à frente sem impulsos. Registre o melhor resultado em centímetros. Use este protocolo e equipamento para comparar com a tabela adulta.';}
+ else if(i>=18&&i<=19){box.innerHTML='<strong>Faixa de 18 a 19 anos.</strong><br>O PROESP-Br 2021 oferece tabelas até 17 anos e a referência adulta CSEP-PATH selecionada começa aos 20. É possível registrar a medida, mas o sistema não atribuirá uma classificação normativa.';}
+ else if(i>=70){box.innerHTML='<strong>70 anos ou mais.</strong><br>As tabelas de referência configuradas não abrangem esta faixa etária. A medida pode ser registrada, mas não será classificada.';}
+ else if(i>=0&&i<6){box.innerHTML='<strong>Menores de 6 anos.</strong><br>As tabelas de referência configuradas não abrangem esta faixa etária. A medida pode ser registrada, mas não será classificada.';}
+ else {box.innerHTML='Informe a data de nascimento para carregar o protocolo e a referência adequados à idade.';}
+ atualizarPreviewFlexibilidade();
+}
+function atualizarPreviewFlexibilidade(){
+ const i=idade($('nascimento').value,$('data').value),r={idade:i,sexo:$('sexo').value,flexibilidade1:$('flexibilidade1').value,flexibilidade2:$('flexibilidade2').value};
+ r.flexibilidadeMelhor=melhorFlexibilidade(r);const a=avaliarFlexibilidade(r),el=$('flexibilidadePreview');
+ if(!a.registrado){el.textContent='O melhor resultado entre as duas tentativas será utilizado para a classificação, quando houver tabela de referência para a faixa etária.';return;}
+ el.innerHTML=`<strong>Melhor resultado: ${a.valor.toFixed(1).replace('.',',')} cm</strong><br>${a.titulo}. ${a.explicacao}`;
+}
+function classificacaoGordura(r){
+ if(r.gordura===''||r.gordura===null)return {titulo:'Percentual não informado',classe:'info',explicacao:'Informe o percentual e o método de avaliação para interpretar este indicador.'};
+ const g=Number(String(r.gordura).replace(',','.')),i=r.idade,fem=r.sexo==='Feminino';
+ if(i<20)return {titulo:'Referência específica necessária',classe:'info',explicacao:'Em crianças e adolescentes, a interpretação da gordura corporal exige referência pediátrica por idade, sexo e método. Não aplicamos limites de adultos.'};
+ let limite=null;
+ if(i<=39)limite=fem?35:25; else if(i<=59)limite=fem?38:28; else if(i<=79)limite=fem?42:30;
+ if(limite===null)return {titulo:'Referência específica necessária',classe:'info',explicacao:'Para 80 anos ou mais, é necessária uma referência específica.'};
+ if(g>=limite)return {titulo:'Gordura corporal elevada',classe:'warn',explicacao:`Seu resultado (${g.toFixed(1).replace('.',',')}%) está no ponto de corte ou acima dele para adiposidade elevada nesta faixa etária e sexo. É um indicador de triagem, não um diagnóstico.`};
+ return {titulo:'Abaixo do ponto de corte de gordura elevada',classe:'good',explicacao:`Seu resultado (${g.toFixed(1).replace('.',',')}%) está abaixo do ponto de corte de adiposidade elevada para sua faixa etária e sexo. Isso não significa, isoladamente, que o percentual seja ideal.`};
+}
+function avaliarAtividade(r){
+ const i=r.idade,mins=Number(r.minutosSemana)||0,fort=Number(r.fortalecimento)||0,int=r.intensidade;
+ if(i<5)return {titulo:'Avaliação específica para primeira infância',classe:'info',explicacao:'Para menores de 5 anos, a recomendação depende da idade exata e do movimento distribuído ao longo do dia. Este formulário ainda não coleta essa distribuição.'};
+ if(i<18){
+  const media=mins/7,tempoOk=media>=60,forcaOk=fort>=3,atende=tempoOk&&forcaOk;
+  let motivo=`Você informou ${mins} min/semana, média de ${media.toFixed(0)} min/dia. A recomendação é uma média de pelo menos 60 min/dia de atividade moderada a vigorosa. `;
+  if(!tempoOk)motivo+=`Faltam aproximadamente ${Math.max(0,420-mins)} minutos na semana para alcançar 420 min. `;
+  if(!forcaOk)motivo+=`Você informou ${fort} dia(s) com fortalecimento; a recomendação é incluir atividades vigorosas e de fortalecimento muscular e ósseo em pelo menos 3 dias/semana. `;
+  if(atende)motivo+='Pelos dados informados, você atende aos critérios mínimos de tempo e fortalecimento registrados.';
+  return {titulo:atende?'Fisicamente ativo — atende aos critérios informados':'Ainda não atende a todos os critérios de atividade física',classe:atende?'good':'warn',explicacao:motivo};
+ }
+ const equivalente=int==='Vigorosa'?mins*2:int==='Leve'?0:mins;
+ const tempoOk=equivalente>=150,forcaOk=fort>=2,completo=tempoOk&&forcaOk;
+ let explicacao=`Você informou ${mins} min/semana de atividade ${int.toLowerCase()}. Para esta estimativa, atividade vigorosa conta aproximadamente em dobro; atividade leve não entra na meta aeróbica. Isso equivale a ${equivalente} min moderados. A recomendação para adultos é pelo menos 150 min moderados (ou 75 min vigorosos) por semana, além de fortalecimento em 2 ou mais dias. `;
+ if(!tempoOk)explicacao+=`Faltam ${150-equivalente} minutos equivalentes moderados para atingir o mínimo aeróbico. `;
+ if(!forcaOk)explicacao+=`Você informou ${fort} dia(s) de fortalecimento; faltam ${2-fort} dia(s) para atingir o mínimo recomendado. `;
+ if(completo)explicacao+='Pelos dados informados, você atinge os dois componentes mínimos da recomendação.';
+ return {titulo:completo?'Fisicamente ativo — atinge as recomendações mínimas':'Ainda não atinge todas as recomendações',classe:completo?'good':'warn',explicacao};
+}
+
+function recomendacao(i,intensidade,minutos){if(i<1)return 'A recomendação depende da idade e do desenvolvimento; avaliação individual necessária.';if(i<5)return 'Crianças pequenas: atividade física variada e brincadeiras ativas distribuídas ao longo do dia, conforme idade.';if(i<18)return 'Crianças e adolescentes: média de pelo menos 60 minutos/dia de atividade física moderada a vigorosa ao longo da semana; incluir atividades vigorosas e de fortalecimento muscular e ósseo.';if(i<65)return 'Adultos: 150–300 minutos/semana de atividade aeróbica moderada, ou 75–150 minutos vigorosa, além de fortalecimento muscular em 2 ou mais dias/semana.';return 'Idosos: 150–300 minutos/semana de atividade moderada (ou equivalente), fortalecimento muscular e atividades multicomponentes com equilíbrio, adaptadas à capacidade funcional.'}
+function coletar(){let i=idade($('nascimento').value,$('data').value),peso=num('massa'),alt=num('estatura')/100,g=$('gordura').value===''?null:num('gordura');let r={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),...Object.fromEntries(fields.map(f=>[f,$(f).value])),idade:i,imc:peso>0&&alt>0?peso/(alt*alt):null,massaGorda:g!==null?peso*g/100:null,massaMagra:g!==null?peso*(1-g/100):null,minutosSemana:num('dias')*num('minutos'),criadoEm:new Date().toISOString()};r.flexibilidadeMelhor=melhorFlexibilidade(r);return r}
+function validar(r){if(!$('autorizacaoDados').checked){alert('Confirme que a avaliação está autorizada para a finalidade informada.');return false}if(!r.nome.trim()||!r.nascimento||!r.sexo||r.idade<0||!(num('massa')>0)||!(num('estatura')>0)){alert('Preencha nome, nascimento, sexo, massa corporal e estatura com valores válidos.');return false}if(r.perfil==='Aluno'&&(!r.serie.trim()||!r.turma.trim())){alert('Informe série e turma do aluno.');return false}if(r.perfil==='Professor'&&!r.disciplina.trim()){alert('Informe a disciplina do professor.');return false}if(r.gordura!==''&&(num('gordura')<0||num('gordura')>100)){alert('O percentual de gordura deve estar entre 0 e 100.');return false}return true}
+
+function exibirRelatorio(r, targetId='relatorioConteudo'){
+ let imc=r.imc?.toFixed(1).replace('.',',')||'—',mg=r.massaGorda?.toFixed(1).replace('.',',')||'—',ml=r.massaMagra?.toFixed(1).replace('.',',')||'—';
+ let classific=r.idade>=20?classeAdulto(r.imc):'Classificação por IMC/idade requer escore-Z OMS.';
+ let gf=classificacaoGordura(r),af=avaliarAtividade(r);
+ let vinc=r.perfil==='Professor'?`Professor · ${r.disciplina}`:((r.serie&&r.turma)?`Aluno · ${r.serie} · Turma ${r.turma} · ${r.turno||''}`:'Avaliação individual');
+ let gordura=r.gordura===''?'Não informado':r.gordura+'%';
+ $(targetId).innerHTML=`<div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><div><div style="font-size:12px;letter-spacing:.12em;color:#9ee5df;font-weight:800">MOVIMENTO & SAÚDE</div><h2 style="font-size:27px;margin:5px 0">SEU RELATÓRIO DE AVALIAÇÃO</h2></div><div style="font-size:34px">🏅</div></div>
+ <p style="color:#d5eaf1">${esc(r.nome)} · ${r.idade} anos · ${r.sexo}<br>${esc(vinc)}${r.instituicao?' · '+esc(r.instituicao):''}<br>Avaliação: ${r.data?new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</p>
+ <h3 style="margin-top:20px">Seus principais resultados</h3><div class="cards">
+ <div class="metric teal"><span>MASSA CORPORAL</span><b>${r.massa} kg</b></div><div class="metric teal"><span>ESTATURA</span><b>${r.estatura} cm</b></div>
+ <div class="metric orange"><span>IMC</span><b>${imc}</b></div><div class="metric ${gf.classe==='good'?'green':gf.classe==='warn'?'orange':'teal'}"><span>GORDURA CORPORAL</span><b>${gordura}</b></div></div>
+ <div class="status ${gf.classe}"><strong>${gf.titulo}</strong><div style="font-weight:400;margin-top:5px">${gf.explicacao}</div></div>
+ <h3 style="margin-top:22px">Flexibilidade — teste de sentar e alcançar</h3>
+ ${(()=>{const f=avaliarFlexibilidade(r);return `<div class="cards"><div class="metric teal"><span>MELHOR RESULTADO</span><b>${f.valor===null?'—':f.valor.toFixed(1).replace('.',',')+' cm'}</b></div><div class="metric ${f.classe==='good'?'green':f.classe==='warn'?'orange':'teal'}"><span>CLASSIFICAÇÃO</span><b style="font-size:18px">${esc(f.titulo)}</b></div></div><div class="status ${f.classe}"><strong>${esc(f.referencia||'Referência não aplicada')}</strong><div style="font-weight:400;margin-top:5px">${esc(f.explicacao)}</div>${f.saude?`<div style="font-weight:700;margin-top:6px">${esc(f.saude)} · ponto de corte: ${f.corte.toFixed(1).replace('.',',')} cm</div>`:''}</div><p style="font-size:12px;color:#d5eaf1">Tentativa 1: ${r.flexibilidade1?esc(r.flexibilidade1)+' cm':'não informada'} · Tentativa 2: ${r.flexibilidade2?esc(r.flexibilidade2)+' cm':'não informada'}. Foi considerado o maior resultado.</p>`})()}
+ <h3 style="margin-top:20px">Quanto você tem de massa magra?</h3><div class="cards">
+ <div class="metric orange"><span>MASSA DE GORDURA</span><b>${mg} kg</b><span>Quantidade estimada de gordura corporal</span></div>
+ <div class="metric green"><span>MASSA LIVRE DE GORDURA</span><b>${ml} kg</b><span>Músculos, água, ossos e outros tecidos — não apenas músculo</span></div></div>
+ ${r.massaMagra!==null?`<div style="margin-top:12px;background:#e9eef2;border-radius:99px;height:18px;overflow:hidden;display:flex"><div style="width:${Math.max(0,Math.min(100,100-Number(r.gordura)))}%;background:#16a6a1"></div><div style="width:${Math.max(0,Math.min(100,Number(r.gordura)))}%;background:#f4a340"></div></div><div style="display:flex;justify-content:space-between;font-size:12px;color:#d5eaf1;margin-top:5px"><span>● Massa livre de gordura</span><span>● Massa de gordura</span></div>`:''}
+ <h3 style="margin-top:22px">Interpretação do IMC</h3>
+ <div class="bmi-diagnosis"><div class="eyebrow">Diagnóstico / classificação do IMC</div><div class="diagnosis-word">${esc(classific)}</div><p>Este é o resultado da interpretação do IMC informado. Observe a classificação em destaque.</p></div>
+ <p style="font-size:13px;color:#d5eaf1">Referência: ${referenciaIMC(r.idade)} Sexo de referência: ${r.sexo}. O IMC não mede diretamente a gordura corporal. Em crianças e adolescentes, a classificação depende de idade e sexo e requer escore-Z.</p>
+ <h3 style="margin-top:22px">Você é fisicamente ativo?</h3><div class="status ${af.classe}"><strong>${af.titulo}</strong><div style="font-weight:400;margin-top:5px">${af.explicacao}</div></div>
+ <p style="font-size:13px;color:#d5eaf1">Dados informados: ${r.dias} dias/semana, ${r.minutos} min/dia, intensidade ${r.intensidade.toLowerCase()}, ${r.fortalecimento||0} dia(s) de fortalecimento. Tipo: ${esc(r.tipoAtividade||'não informado')}.</p>
+ <div style="background:#ffffff18;padding:13px;border-radius:11px;margin-top:12px"><b>Como interpretar os indicadores</b><p style="margin:6px 0">O IMC relaciona massa corporal e estatura, mas não mede diretamente a gordura. O percentual de gordura estima a proporção do peso corporal composta por gordura; a massa livre de gordura inclui músculos, água, ossos e órgãos. O teste de sentar e alcançar avalia principalmente a flexibilidade da cadeia posterior, e não toda a mobilidade do corpo. A avaliação da atividade física considera os hábitos informados no formulário.</p></div>
+ ${gerarResumoRecomendacoes(r,gf,af)}
+ 
+ <p style="font-size:12px;color:#d5eaf1;margin-top:20px">Relatório educativo, não diagnóstico clínico. Para adultos de 20–79 anos, o ponto de corte de gordura elevada considera sexo e faixa etária (Gallagher et al.); não define sozinho uma faixa ideal e deve ser interpretado considerando o método de medida. Para menores de 20 anos, é necessária referência pediátrica específica. Massa livre de gordura inclui água, ossos e órgãos, além de músculos. Flexibilidade: PROESP-Br 2021 para 6–17 anos; CSEP-PATH para adultos de 20–69 anos, com protocolo de flexômetro e linha dos pés em 26 cm. As duas referências usam protocolos diferentes e seus resultados não devem ser comparados diretamente.</p>
+ <div style="border-top:1px solid #ffffff55;margin-top:20px;padding-top:10px;font-size:11px;color:#d5eaf1">MOVIMENTO & SAÚDE · Avaliação individual · Registro ${r.id.slice(0,8)}</div>`;
+}
+function renderHistoricoInicial(){let rs=registros();$('tabelaHistorico').innerHTML=rs.length?`<table><thead><tr><th>Nome</th><th>Data</th><th>Idade</th><th>IMC</th><th>Flex (cm)</th><th>Ação</th></tr></thead><tbody>${rs.map(r=>`<tr><td>${esc(r.nome)}</td><td>${r.data?new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td><td>${r.idade}</td><td>${r.imc?.toFixed(1).replace('.',',')||'—'}</td><td>${(r.flexibilidadeMelhor??melhorFlexibilidade(r))!==null?(r.flexibilidadeMelhor??melhorFlexibilidade(r)).toFixed(1).replace('.',','):'—'}</td><td><button data-open="${r.id}" style="padding:7px 10px">Ver</button></td></tr>`).join('')}</tbody></table>`:'<p class="muted">Nenhuma avaliação salva neste navegador.</p>';$('tabelaHistorico').querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{let r=registros().find(x=>x.id===b.dataset.open);if(r){exibirRelatorio(r);abrir('relatorio')}})}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function abrir(id){document.querySelectorAll('.tabpage').forEach(x=>x.classList.toggle('hidden',x.id!==id));document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));if(id==='historico')renderHistorico()}
+$('nascimento').addEventListener('change',atualizarInstrucoesFlexibilidade);$('data').addEventListener('change',atualizarInstrucoesFlexibilidade);$('sexo').addEventListener('change',atualizarPreviewFlexibilidade);$('flexibilidade1').addEventListener('input',atualizarPreviewFlexibilidade);$('flexibilidade2').addEventListener('input',atualizarPreviewFlexibilidade);atualizarInstrucoesFlexibilidade();
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>abrir(b.dataset.tab));
+$('salvar').onclick=()=>{let r=coletar();if(!validar(r))return;let rs=registros();rs.push(r);salvarRegistros(rs);exibirRelatorio(r);abrir('relatorio');alert('Avaliação salva neste navegador. Faça cópias de segurança regularmente.')};
+$('limpar').onclick=()=>{fields.forEach(f=>{if(f==='data')$(f).value=dataLocalISO(today);else if(f==='dias')$(f).value='3';else if(f==='minutos')$(f).value='30';else if(f==='fortalecimento')$(f).value='0';else if(f==='perfil')$(f).value='Aluno';else if(f==='turno')$(f).value='Manhã';else if(f==='instituicao')$(f).value='Escola Zulmira de Novais';else if(f==='serie')$(f).value='6º ano';else if(f==='turma')$(f).value='A';else if(f==='intensidade')$(f).value='Moderada';else $(f).value=''});mudarPerfil();$('autorizacaoDados').checked=false;atualizarInstrucoesFlexibilidade()};
+$('exportar').onclick=()=>{let rs=registros();if(!rs.length){alert('Não há registros para exportar.');return}let cols=['nome','nascimento','idade','sexo','data','perfil','instituicao','disciplina','serie','turma','turno','massa','estatura','imc','gordura','metodoGordura','massaGorda','massaMagra','intensidade','tipoAtividade','dias','minutos','fortalecimento','minutosSemana','flexibilidade1','flexibilidade2','flexibilidadeMelhor'];let csv=[cols.join(';'),...rs.map(r=>cols.map(c=>{let v=r[c]??'';return '"'+String(v).replaceAll('"','""')+'"'}).join(';'))].join('\r\n');let blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='avaliacoes_antropometricas.csv';a.click();URL.revokeObjectURL(a.href)};
+$('backup').onclick=()=>{let blob=new Blob([JSON.stringify(registros(),null,2)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='backup_movimento_saude.json';a.click();URL.revokeObjectURL(a.href)};
+$('imprimir').onclick=()=>window.print();
+
+
+// ===== Sincronização em nuvem, autenticação e compartilhamento seguro =====
+let firebaseApp=null, auth=null, db=null, firebasePronto=false, usuarioAtual=null;
+let modoNuvem=false, modoLocal=false, pararEscuta=null, cacheNuvem=[], avaliacaoAtual=null, tokenCompartilhamentoAtual=null;
+const tokenRelatorio = new URLSearchParams(location.search).get('relatorio');
+const configCompleta = firebaseConfig && ['apiKey','authDomain','projectId','appId'].every(k => typeof firebaseConfig[k]==='string' && firebaseConfig[k].trim() && !firebaseConfig[k].includes('PREENCHER'));
+
+function setMensagem(texto, tipo='info') { const el=$('authMessage'); if(el){el.textContent=texto;el.style.color=tipo==='error'?'#a52b2b':tipo==='success'?'#167347':'#537184';} }
+function setShareMessage(texto, tipo='info') { const el=$('shareMessage'); if(el){el.textContent=texto;el.style.color=tipo==='error'?'#a52b2b':tipo==='success'?'#167347':'#537184';} }
+function mostrarAppLocal(){modoLocal=true;modoNuvem=false;usuarioAtual=null;$('loginPanel').classList.add('hidden');$('appShell').classList.remove('hidden');$('statusConta').textContent='Modo local — sem sincronização';$('statusSincronizacao').textContent='Registros guardados somente neste navegador/dispositivo.';$('sairConta').classList.add('hidden');$('importarLocais').classList.add('hidden');$('appNotice').classList.remove('hidden');$('appNotice').textContent='Modo local: os dados não serão sincronizados com outros dispositivos. Configure o Firebase para usar o mesmo histórico no Chromebook e no celular.';renderHistorico();}
+function mostrarLogin(){modoLocal=false;modoNuvem=false;$('appShell').classList.add('hidden');$('loginPanel').classList.remove('hidden');$('publicShare').classList.add('hidden');}
+function habilitarFirebase(){
+ try{firebaseApp=initializeApp(firebaseConfig);auth=getAuth(firebaseApp);db=getFirestore(firebaseApp);firebasePronto=true;return true;}
+ catch(e){console.error(e);firebasePronto=false;return false;}
+}
+function iniciarEscutaNuvem(uid){
+ if(pararEscuta)pararEscuta();
+ $('statusSincronizacao').textContent='Conectando ao histórico na nuvem...';
+ pararEscuta=onSnapshot(collection(db,'usuarios',uid,'avaliacoes'),snap=>{
+  cacheNuvem=snap.docs.map(d=>({id:d.id,...d.data()}));
+  cacheNuvem.sort((a,b)=>String(b.data||'').localeCompare(String(a.data||'')));
+  $('statusSincronizacao').textContent=`Sincronizado · ${cacheNuvem.length} avaliação(ões) disponíveis neste dispositivo.`;
+  if(!$('historico').classList.contains('hidden'))renderHistorico();
+ },err=>{console.error(err);$('statusSincronizacao').textContent='Falha na sincronização. Verifique a conexão e as regras do Firestore.';});
+}
+function registros(){
+ if(modoNuvem&&usuarioAtual)return cacheNuvem.slice();
+ try{return JSON.parse(localStorage.getItem('movSaudeAvaliacoes')||'[]')}catch(e){return []}
+}
+function salvarRegistros(v){localStorage.setItem('movSaudeAvaliacoes',JSON.stringify(v))}
+function renderHistorico(){
+ const rs=registros().slice().sort((a,b)=>String(b.data||'').localeCompare(String(a.data||'')));
+ $('tabelaHistorico').innerHTML=rs.length?`<table><thead><tr><th>Nome</th><th>Data</th><th>Idade</th><th>IMC</th><th>Flex (cm)</th><th>Ação</th></tr></thead><tbody>${rs.map(r=>`<tr><td>${esc(r.nome)}</td><td>${r.data?new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td><td>${r.idade??'—'}</td><td>${r.imc?.toFixed(1).replace('.',',')||'—'}</td><td>${(r.flexibilidadeMelhor??melhorFlexibilidade(r))!==null?(r.flexibilidadeMelhor??melhorFlexibilidade(r)).toFixed(1).replace('.',','):'—'}</td><td><button data-open="${esc(r.id)}" style="padding:7px 10px">Ver relatório</button></td></tr>`).join('')}</tbody></table>`:'<p class="muted">Nenhuma avaliação salva.</p>';
+ $('tabelaHistorico').querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{const r=registros().find(x=>x.id===b.dataset.open);if(r){avaliacaoAtual=r;tokenCompartilhamentoAtual=r.shareToken||null;exibirRelatorio(r);$('sharePanel').classList.toggle('hidden',!modoNuvem);$('shareResult').classList.add('hidden');$('revogarQR').classList.toggle('hidden',!r.shareToken);$('consentShare').checked=false;setShareMessage(r.shareToken?'Este relatório tem um link de compartilhamento registrado. Você pode revogá-lo ou gerar um novo.':'');abrir('relatorio');}});
+}
+async function salvarAvaliacao(){
+ const r=coletar();if(!validar(r))return;
+ try{
+  if(modoNuvem&&usuarioAtual){
+   $('salvar').disabled=true;$('salvar').textContent='Salvando na nuvem...';
+   await setDoc(doc(db,'usuarios',usuarioAtual.uid,'avaliacoes',r.id),r);
+   avaliacaoAtual=r;tokenCompartilhamentoAtual=null;
+   $('statusSincronizacao').textContent='Avaliação salva na nuvem. Sincronizando outros dispositivos...';
+  }else{
+   const rs=registros();rs.push(r);salvarRegistros(rs);avaliacaoAtual=r;tokenCompartilhamentoAtual=null;
+  }
+  exibirRelatorio(r);$('sharePanel').classList.toggle('hidden',!modoNuvem);$('shareResult').classList.add('hidden');$('revogarQR').classList.add('hidden');$('consentShare').checked=false;abrir('relatorio');
+ }catch(e){console.error(e);alert('Não foi possível salvar. Verifique a conexão, o login e as regras do Firestore.');}
+ finally{$('salvar').disabled=false;$('salvar').textContent='Calcular e salvar avaliação';}
+}
+async function importarDadosLocais(){
+ if(!modoNuvem||!usuarioAtual){alert('Entre na sua conta para importar.');return;}
+ let locais=[];try{locais=JSON.parse(localStorage.getItem('movSaudeAvaliacoes')||'[]')}catch(e){}
+ if(!locais.length){alert('Não há avaliações locais neste navegador para importar.');return;}
+ if(!confirm(`Serão enviados ${locais.length} registro(s) deste dispositivo para sua conta na nuvem. Registros com o mesmo código serão atualizados. Continuar?`))return;
+ $('importarLocais').disabled=true;
+ try{for(const r of locais){const id=r.id||crypto.randomUUID();await setDoc(doc(db,'usuarios',usuarioAtual.uid,'avaliacoes',id),{...r,id});}alert(`${locais.length} avaliação(ões) importada(s) para a nuvem.`);}
+ catch(e){console.error(e);alert('A importação foi interrompida. Verifique a conexão e tente novamente.');}
+ finally{$('importarLocais').disabled=false;}
+}
+function resumoRecomendacoes(r,gf,af){
+ const f=avaliarFlexibilidade(r),itens=[],acoes=[];
+ if(Number(r.idade)>=20){itens.push(`IMC: ${r.imc?.toFixed(1).replace('.',',')??'não calculado'} (${classeAdulto(r.imc)}).`);if(r.imc>=25)acoes.push('Converse com um profissional de saúde ou nutricionista para interpretar o IMC junto de outros indicadores, sem usar o número isoladamente.');}
+ else itens.push(`IMC calculado: ${r.imc?.toFixed(1).replace('.',',')??'não calculado'}. Para menores de 20 anos, a classificação depende de curvas de IMC por idade e sexo; este relatório não atribui uma categoria adulta.`);
+ if(r.gordura!==''&&r.gordura!==null){itens.push(`Gordura corporal: ${String(r.gordura).replace('.',',')}% (${gf.titulo.toLowerCase()}).`);if(gf.classe==='warn')acoes.push('Interprete o percentual de gordura com o profissional responsável, considerando o método utilizado e outras medidas; o resultado isolado não estabelece diagnóstico.');}
+ else itens.push('Percentual de gordura: não informado.');
+ if(f.registrado){itens.push(`Flexibilidade: ${f.valor.toFixed(1).replace('.',',')} cm — ${f.titulo.toLowerCase()}${f.saude?`, ${f.saude.toLowerCase()}`:''}.`);if(f.classe==='warn')acoes.push('Inclua exercícios de mobilidade e flexibilidade de forma gradual, sem dor e com orientação adequada. Refaça o teste usando o mesmo protocolo e equipamento.');else if(f.classe==='good')acoes.push('Mantenha práticas variadas de mobilidade e flexibilidade, respeitando os limites individuais.');}
+ else itens.push('Flexibilidade: teste ainda não registrado.');
+ itens.push(`Atividade física: ${af.titulo.toLowerCase()}.`);if(af.classe==='warn')acoes.push('Aumente a atividade física progressivamente, conforme a faixa etária e a capacidade individual; procure distribuir as atividades ao longo da semana.');
+ if(!acoes.length)acoes.push('Mantenha hábitos ativos, alimentação equilibrada, sono adequado e avaliações periódicas. Adapte qualquer mudança às condições e orientações individuais.');
+ return `<div class="summary-card"><h3>Resumo da avaliação</h3><ul>${itens.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><h3 style="margin-top:14px">Recomendações</h3><ul>${acoes.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p style="font-size:12px;margin:12px 0 0;color:#526d7d">Este resumo é educativo e não substitui avaliação clínica. Os resultados devem ser interpretados considerando o protocolo, a idade, o sexo de referência, o método de medida e o contexto da pessoa avaliada.</p></div>`;
+}
+// Disponibiliza o resumo acima para o relatório principal.
+function gerarResumoRecomendacoes(r,gf,af){return resumoRecomendacoes(r,gf,af)}
+function gerarTokenSeguro(){const bytes=new Uint8Array(24);crypto.getRandomValues(bytes);return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');}
+function registroParaCompartilhar(r){
+ // Não envia a data completa de nascimento, e-mail ou identificadores de turma.
+ return {id:r.id,nome:r.nome,idade:r.idade,sexo:r.sexo,data:r.data,perfil:'Avaliado',instituicao:'',massa:r.massa,estatura:r.estatura,gordura:r.gordura,metodoGordura:r.metodoGordura,imc:r.imc,massaGorda:r.massaGorda,massaMagra:r.massaMagra,intensidade:r.intensidade,tipoAtividade:r.tipoAtividade,dias:r.dias,minutos:r.minutos,fortalecimento:r.fortalecimento,minutosSemana:r.minutosSemana,flexibilidade1:r.flexibilidade1,flexibilidade2:r.flexibilidade2,flexibilidadeMelhor:r.flexibilidadeMelhor};
+}
+async function gerarCompartilhamento(){
+ if(!modoNuvem||!usuarioAtual||!avaliacaoAtual){setShareMessage('Entre na conta e abra um relatório salvo na nuvem para compartilhar.','error');return;}
+ if(!$('consentShare').checked){setShareMessage('Marque a confirmação de autorização antes de gerar o QR Code.','error');return;}
+ if(typeof QRCode==='undefined'){setShareMessage('Não foi possível carregar o gerador de QR Code. Verifique a conexão com a internet.','error');return;}
+ $('gerarQR').disabled=true;$('gerarQR').textContent='Gerando...';
+ try{
+  if(avaliacaoAtual.shareToken){try{await updateDoc(doc(db,'relatoriosCompartilhados',avaliacaoAtual.shareToken),{active:false});}catch(e){console.info('O link anterior pode já estar revogado.',e);}}
+  const token=gerarTokenSeguro(),expira=new Date(Date.now()+30*24*60*60*1000),publicUrl=`${location.origin}${location.pathname}?relatorio=${token}`;
+  await setDoc(doc(db,'relatoriosCompartilhados',token),{ownerUid:usuarioAtual.uid,active:true,expiresAt:Timestamp.fromDate(expira),createdAt:serverTimestamp(),relatorio:registroParaCompartilhar(avaliacaoAtual)});
+  await updateDoc(doc(db,'usuarios',usuarioAtual.uid,'avaliacoes',avaliacaoAtual.id),{shareToken:token});
+  avaliacaoAtual.shareToken=token;tokenCompartilhamentoAtual=token;
+  $('qrBox').innerHTML='';new QRCode($('qrBox'),{text:publicUrl,width:220,height:220,colorDark:'#123b62',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+  $('shareUrl').href=publicUrl;$('shareUrl').textContent=publicUrl;$('shareExpiry').textContent=`Acesso válido até ${expira.toLocaleDateString('pt-BR')}. O link pode ser desativado antes dessa data.`;
+  $('shareResult').classList.remove('hidden');$('revogarQR').classList.remove('hidden');setShareMessage('QR Code criado. A pessoa poderá abrir o relatório pelo celular, sem fazer login.','success');
+ }catch(e){console.error(e);setShareMessage('Não foi possível criar o compartilhamento. Confirme as regras do Firestore e a conexão.','error');}
+ finally{$('gerarQR').disabled=false;$('gerarQR').textContent='Gerar QR Code de compartilhamento';}
+}
+async function revogarCompartilhamento(){
+ const token=tokenCompartilhamentoAtual||avaliacaoAtual?.shareToken;if(!token||!usuarioAtual){setShareMessage('Nenhum link ativo selecionado.');return;}
+ try{await updateDoc(doc(db,'relatoriosCompartilhados',token),{active:false});if(avaliacaoAtual?.id){await updateDoc(doc(db,'usuarios',usuarioAtual.uid,'avaliacoes',avaliacaoAtual.id),{shareToken:null});avaliacaoAtual.shareToken=null;}tokenCompartilhamentoAtual=null;$('shareResult').classList.add('hidden');$('revogarQR').classList.add('hidden');setShareMessage('Link revogado. O QR antigo não abrirá mais o relatório.','success');}
+ catch(e){console.error(e);setShareMessage('Não foi possível revogar o link. Verifique as regras do Firestore.','error');}
+}
+async function abrirRelatorioPublico(token){
+ $('loginPanel').classList.add('hidden');$('appShell').classList.add('hidden');$('publicShare').classList.remove('hidden');
+ if(!firebasePronto){$('relatorioCompartilhadoConteudo').innerHTML='<h2>Relatório indisponível</h2><p>Este link depende da configuração Firebase do aplicativo.</p>';return;}
+ try{
+  const snap=await getDoc(doc(db,'relatoriosCompartilhados',token));
+  if(!snap.exists())throw new Error('not-found');
+  const d=snap.data(),exp=d.expiresAt?.toDate?.();
+  if(!d.active||!exp||exp<=new Date())throw new Error('expired');
+  $('publicMeta').textContent=`Cópia compartilhada · Acesso válido até ${exp.toLocaleDateString('pt-BR')} · Somente leitura`;
+  exibirRelatorio(d.relatorio,'relatorioCompartilhadoConteudo');
+ }catch(e){console.error(e);$('publicMeta').textContent='Acesso não disponível';$('relatorioCompartilhadoConteudo').innerHTML='<h2>Este relatório não está disponível</h2><p>O link pode ter expirado, ter sido revogado pelo responsável ou estar incorreto. Solicite um novo QR Code à pessoa que realizou a avaliação.</p>';}
+}
+
+// Eventos de autenticação e inicialização.
+$('entrarConta').onclick=async()=>{try{setMensagem('Entrando...');await signInWithEmailAndPassword(auth,$('authEmail').value.trim(),$('authPassword').value);}catch(e){console.error(e);setMensagem('Não foi possível entrar. Confira e-mail e senha.','error');}};
+$('criarConta').onclick=async()=>{try{if(!$('authEmail').value.trim()||$('authPassword').value.length<6){setMensagem('Informe um e-mail válido e uma senha com pelo menos 6 caracteres.','error');return;}setMensagem('Criando conta...');await createUserWithEmailAndPassword(auth,$('authEmail').value.trim(),$('authPassword').value);}catch(e){console.error(e);setMensagem(e.code==='auth/email-already-in-use'?'Este e-mail já possui uma conta. Faça login.':'Não foi possível criar a conta. Verifique os dados e tente novamente.','error');}};
+$('redefinirSenha').onclick=async()=>{try{const email=$('authEmail').value.trim();if(!email){setMensagem('Digite seu e-mail para receber o link de redefinição.','error');return;}await sendPasswordResetEmail(auth,email);setMensagem('Enviamos um link de redefinição para o e-mail informado.','success');}catch(e){console.error(e);setMensagem('Não foi possível enviar o e-mail de redefinição.','error');}};
+$('sairConta').onclick=async()=>{if(auth)await signOut(auth);};
+$('usarLocal').onclick=()=>mostrarAppLocal();
+$('importarLocais').onclick=importarDadosLocais;
+$('gerarQR').onclick=gerarCompartilhamento;
+$('revogarQR').onclick=revogarCompartilhamento;
+$('copiarShare').onclick=async()=>{try{await navigator.clipboard.writeText($('shareUrl').href);setShareMessage('Link copiado.','success');}catch(e){setShareMessage('Copie o endereço exibido ao lado do QR Code.');}};
+$('baixarQR').onclick=()=>{const canvas=$('qrBox').querySelector('canvas');const img=$('qrBox').querySelector('img');const url=canvas?canvas.toDataURL('image/png'):img?.src;if(!url){setShareMessage('O QR Code ainda não está pronto.');return;}const a=document.createElement('a');a.href=url;a.download='QR_relatorio_movimento_saude.png';a.click();};
+$('imprimirPublico').onclick=()=>window.print();
+$('salvar').onclick=salvarAvaliacao;
+
+if(tokenRelatorio){
+ if(configCompleta)habilitarFirebase();
+ abrirRelatorioPublico(tokenRelatorio);
+}else if(configCompleta&&habilitarFirebase()){
+ $('cloudSetupNotice').classList.add('hidden');$('firebaseLoginFields').classList.remove('hidden');$('usarLocal').classList.remove('hidden');mostrarLogin();
+ onAuthStateChanged(auth,user=>{
+  if(pararEscuta){pararEscuta();pararEscuta=null;}
+  usuarioAtual=user;cacheNuvem=[];
+  if(user){modoNuvem=true;modoLocal=false;$('loginPanel').classList.add('hidden');$('appShell').classList.remove('hidden');$('statusConta').textContent=`Conectado: ${user.email||'conta autenticada'}`;$('statusSincronizacao').textContent='Iniciando sincronização...';$('sairConta').classList.remove('hidden');$('importarLocais').classList.remove('hidden');$('appNotice').classList.add('hidden');$('sharePanel').classList.add('hidden');iniciarEscutaNuvem(user.uid);}
+  else{mostrarLogin();setMensagem('Entre com sua conta para acessar os registros sincronizados.');}
+ });
+}else{
+ $('cloudSetupNotice').classList.remove('hidden');$('firebaseLoginFields').classList.add('hidden');$('usarLocal').classList.remove('hidden');mostrarLogin();
+}
+
+</script>
+</body></html>
