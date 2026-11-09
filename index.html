@@ -171,16 +171,91 @@ function dataLocalISO(d=new Date()){const y=d.getFullYear(),m=String(d.getMonth(
 $('data').value=dataLocalISO(today);
 function num(id){return Number($(id).value.replace(',','.'))}
 function idade(data, dataReferencia=$('data')?.value || dataLocalISO()){if(!data)return null;let d=new Date(data+'T12:00:00'),n=new Date((dataReferencia||dataLocalISO())+'T12:00:00');let a=n.getFullYear()-d.getFullYear();if(n.getMonth()<d.getMonth()||(n.getMonth()===d.getMonth()&&n.getDate()<d.getDate()))a--;return a}
+function idadeMeses(dataNascimento,dataReferencia=$('data')?.value || dataLocalISO()){if(!dataNascimento||!dataReferencia)return null;const d=new Date(dataNascimento+'T12:00:00'),n=new Date(dataReferencia+'T12:00:00');let meses=(n.getFullYear()-d.getFullYear())*12+(n.getMonth()-d.getMonth());if(n.getDate()<d.getDate())meses--;return meses>=0?meses:null}
 function registrosLocalInicial(){try{return JSON.parse(localStorage.getItem('movSaudeAvaliacoes')||'[]')}catch(e){return []}}
 function salvarRegistrosLocalInicial(v){localStorage.setItem('movSaudeAvaliacoes',JSON.stringify(v))}
 function mudarPerfil(){let prof=$('perfil').value==='Professor';$('instituicao').value='Escola Zulmira de Novais';$('campoDisciplina').classList.toggle('hidden',!prof);$('camposAluno').classList.toggle('hidden',prof)}
 $('perfil').addEventListener('change',mudarPerfil);mudarPerfil();
-function referenciaIMC(i){if(i<5)return 'OMS: padrões de crescimento infantil (0–5 anos); requer cálculo por escore-Z.';if(i<20)return 'OMS 2007: IMC por idade e sexo (5–19 anos); requer escore-Z.';return 'Adultos: classificação de IMC para adultos.'}
+function referenciaIMC(i){if(i<5)return 'OMS: padrões de crescimento infantil (0–5 anos); requer curva específica.';if(i<20)return 'OMS 2007: IMC-para-idade, por sexo e idade em meses (5–19 anos).';return 'Adultos: classificação de IMC para adultos.'}
 function classeAdulto(imc){if(imc<18.5)return 'Abaixo do peso';if(imc<25)return 'Faixa de referência (eutrofia)';if(imc<30)return 'Sobrepeso';if(imc<35)return 'Obesidade grau I';if(imc<40)return 'Obesidade grau II';return 'Obesidade grau III'}
+
+// WHO 2007 BMI-for-age LMS table (5–19 years; months 61–228).
+// Data: WHO Reference 2007, distributed in RCPCH growth-references/WHO2007.csv.
+const WHO_BMI_LMS_URLS=[
+ 'https://raw.githubusercontent.com/rcpch/growth-references/main/who2006/WHO2007.csv',
+ 'https://cdn.jsdelivr.net/gh/rcpch/growth-references@main/who2006/WHO2007.csv'
+];
+const WHO_BMI_CACHE_KEY='movSaudeWHO2007LMS_v1';
+const whoBmiLms=new Map();
+let whoBmiStatus='Referência OMS ainda não carregada.';
+function preencherTabelaWHO(txt){
+ const temp=new Map();let cont=0;
+ for(const line of txt.replace(/^\uFEFF/,'').split(/\r?\n/)){
+  const c=line.split(',').map(x=>x.trim().replace(/^"|"$/g,''));
+  if(c.length<20)continue;
+  const month=Number(c[0]);
+  if(!Number.isInteger(month)||month<61||month>228)continue;
+  const b={L:Number(c[14]),M:Number(c[15]),S:Number(c[16])};
+  const g={L:Number(c[17]),M:Number(c[18]),S:Number(c[19])};
+  if([b.L,b.M,b.S,g.L,g.M,g.S].every(Number.isFinite)&&b.M>0&&g.M>0){temp.set('Masculino:'+month,b);temp.set('Feminino:'+month,g);cont++;}
+ }
+ if(cont<150)throw new Error('Tabela incompleta: '+cont+' meses');
+ temp.forEach((v,k)=>whoBmiLms.set(k,v));
+ return cont;
+}
+async function carregarTabelaWHO(){
+ // Se o arquivo já foi carregado neste navegador, usa o cache para funcionar mesmo com conexão instável.
+ try{
+  const cache=localStorage.getItem(WHO_BMI_CACHE_KEY);
+  if(cache){
+   const dados=JSON.parse(cache);
+   if(dados&&Object.keys(dados).length>=300){Object.entries(dados).forEach(([k,v])=>whoBmiLms.set(k,v));whoBmiStatus='Referência OMS 2007 carregada do cache local.';return;}
+  }
+ }catch(e){console.warn('Cache WHO indisponível:',e);}
+ let ultimoErro=null;
+ for(const url of WHO_BMI_LMS_URLS){
+  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),10000);
+  try{
+   const resp=await fetch(url,{cache:'force-cache',signal:ctrl.signal});
+   if(!resp.ok)throw new Error('HTTP '+resp.status);
+   const txt=await resp.text();
+   const cont=preencherTabelaWHO(txt);
+   try{localStorage.setItem(WHO_BMI_CACHE_KEY,JSON.stringify(Object.fromEntries(whoBmiLms)));}catch(e){console.warn('Não foi possível guardar cache WHO:',e);}
+   whoBmiStatus='Referência OMS 2007 carregada ('+cont+' meses de idade).';
+   return;
+  }catch(e){ultimoErro=e;console.warn('Falha ao carregar tabela OMS por '+url,e);}
+  finally{clearTimeout(timer);}
+ }
+ whoBmiStatus='Não foi possível carregar a tabela OMS para IMC-para-idade. Verifique a conexão e atualize a página.';
+ console.warn('Referência OMS indisponível:',ultimoErro);
+}
+await carregarTabelaWHO();
+function valorLMS(lms,z){const {L,M,S}=lms;if(Math.abs(L)<1e-8)return M*Math.exp(S*z);const base=1+L*S*z;return base>0?M*Math.pow(base,1/L):NaN;}
+function zScoreLMS(valor,lms){
+ const {L,M,S}=lms;let z=Math.abs(L)<1e-8?Math.log(valor/M)/S:(Math.pow(valor/M,L)-1)/(L*S);
+ // WHO restricted LMS correction beyond +/-3 SD.
+ if(z>3){const s3=valorLMS(lms,3),s2=valorLMS(lms,2);if(Number.isFinite(s3)&&Number.isFinite(s2)&&s3>s2)z=3+(valor-s3)/(s3-s2);}
+ else if(z< -3){const s3=valorLMS(lms,-3),s2=valorLMS(lms,-2);if(Number.isFinite(s3)&&Number.isFinite(s2)&&s2>s3)z=-3+(valor-s3)/(s2-s3);}
+ return z;
+}
+function normalCDF(z){const x=Math.abs(z)/Math.sqrt(2),t=1/(1+0.3275911*x),a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429;const erf=1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);return 0.5*(1+(z<0?-erf:erf));}
 function interpretarIMC(r){
  const i=Number(r.idade),v=Number(r.imc);
  if(!Number.isFinite(v)||v<=0)return {titulo:'IMC não calculado',classe:'info',explicacao:'Informe massa corporal e estatura válidas para calcular o IMC.',implicacao:'Sem esses dados, não é possível interpretar este indicador.',recomendacao:'Confira as medidas e registre-as novamente.'};
- if(i<20)return {titulo:'Classificação por idade necessária',classe:'info',explicacao:`O IMC calculado foi ${v.toFixed(1).replace('.',',')} kg/m², mas não será classificado pelas faixas de adultos.`,implicacao:'Em crianças e adolescentes, o IMC deve ser comparado com curvas de crescimento por idade e sexo (percentil ou escore-Z). Usar limites adultos pode levar a interpretações incorretas.',recomendacao:'Solicite a avaliação por curva de IMC-para-idade com referência pediátrica adequada. Observe também a trajetória de crescimento, não apenas uma medida isolada.'};
+ const meses=(r.idadeMeses!==undefined&&r.idadeMeses!==null&&r.idadeMeses!==''&&Number.isFinite(Number(r.idadeMeses)))?Number(r.idadeMeses):idadeMeses(r.nascimento,r.data);
+ if(meses>=61&&meses<=228){
+  const lms=whoBmiLms.get((r.sexo||'')+':'+meses);
+  if(!lms)return {titulo:'Classificação OMS indisponível',classe:'info',explicacao:`O IMC calculado foi ${v.toFixed(1).replace('.',',')} kg/m², mas a linha da referência OMS para ${meses} meses não foi carregada.`,implicacao:'Não é correto aplicar as faixas de adultos a crianças e adolescentes.',recomendacao:whoBmiStatus+' Feche e abra o relatório novamente depois de restabelecer a conexão.'};
+  const z=zScoreLMS(v,lms),percentil=Math.max(0,Math.min(100,normalCDF(z)*100));
+  let titulo,classe,explicacao,implicacao,recomendacao;
+  if(z < -3){titulo='Magreza acentuada';classe='warn';explicacao='IMC-para-idade abaixo de -3 desvios-padrão na referência OMS 2007.';implicacao='Em crianças e adolescentes, valores muito baixos podem acompanhar ingestão insuficiente, dificuldades de crescimento ou condições de saúde que precisam ser investigadas. O resultado isolado não identifica a causa.';recomendacao='Recomenda-se avaliação com pediatra ou nutricionista, observando curva de crescimento, alimentação, histórico e possíveis sintomas.';}
+  else if(z < -2){titulo='Magreza';classe='warn';explicacao='IMC-para-idade abaixo de -2 e igual ou acima de -3 desvios-padrão na referência OMS 2007.';implicacao='Pode indicar peso baixo em relação à estatura e idade. Quando persistente, merece atenção à alimentação, crescimento e possíveis condições clínicas.';recomendacao='Acompanhe a evolução do crescimento e procure avaliação de profissional de saúde para interpretar o resultado junto ao histórico da pessoa.';}
+  else if(z <= 1){titulo='Eutrofia — faixa de referência';classe='good';explicacao='Parabéns! O IMC-para-idade está entre -2 e +1 desvio-padrão, faixa de referência da OMS para 5–19 anos.';implicacao='O resultado está dentro da faixa de referência para este indicador. Ainda assim, IMC não mede diretamente gordura corporal nem substitui a avaliação do crescimento, da alimentação e da saúde geral.';recomendacao='Continue incentivando alimentação variada, sono adequado, brincadeiras, esportes e atividade física regular. Acompanhe a trajetória de crescimento, não apenas uma medida isolada.';}
+  else if(z <= 2){titulo='Sobrepeso';classe='warn';explicacao='IMC-para-idade acima de +1 e igual ou abaixo de +2 desvios-padrão na referência OMS 2007.';implicacao='Essa faixa pode estar associada a maior adiposidade e, ao longo do tempo, a maior probabilidade de alterações metabólicas. O IMC é um indicador de triagem e não confirma excesso de gordura nem doença.';recomendacao='Converse com a família e equipe de saúde para avaliar crescimento, hábitos, composição corporal e contexto. Priorize mudanças saudáveis para toda a família, sem dietas restritivas ou estigmatização.';}
+  else {titulo='Obesidade';classe='warn';explicacao='IMC-para-idade acima de +2 desvios-padrão na referência OMS 2007.';implicacao='Essa faixa está associada, em nível populacional, a maior probabilidade de fatores de risco cardiometabólicos. Não significa que a pessoa necessariamente tenha uma doença; é necessária avaliação individual.';recomendacao='Recomenda-se acompanhamento com pediatra ou equipe multiprofissional para avaliar crescimento, pressão arterial, hábitos, sono e outros fatores. O cuidado deve ser acolhedor, sem culpa ou metas de perda de peso sem orientação.';}
+  return {titulo,classe,explicacao,implicacao,recomendacao,referencia:'OMS 2007 — IMC-para-idade',zScore:z,percentil,detalhe:`Escore-Z: ${z>=0?'+':''}${z.toFixed(2).replace('.',',')} DP · Percentil aproximado: ${Math.round(percentil)}.`};
+ }
+ if(i<20)return {titulo:'Fora da faixa da tabela OMS carregada',classe:'info',explicacao:`IMC calculado: ${v.toFixed(1).replace('.',',')} kg/m². A referência OMS 2007 utilizada abrange 61 a 228 meses (aproximadamente 5 anos e 1 mês a 19 anos). A idade registrada está fora desse intervalo.`,implicacao:'Não é adequado substituir uma curva pediátrica por limites adultos sem observar a idade exata.',recomendacao:'Para crianças abaixo de 5 anos, utilize os padrões OMS 0–5 anos. Para 19 anos acima de 228 meses, faça interpretação individual com referência apropriada.'};
  const cat=classeAdulto(v);
  if(v<18.5)return {titulo:cat,classe:'warn',explicacao:'O IMC está abaixo da faixa de referência para adultos.',implicacao:'Um IMC baixo pode estar associado a ingestão nutricional insuficiente, perda de massa muscular ou outras condições, mas também depende da constituição individual. Uma perda de peso involuntária merece atenção.',recomendacao:'Converse com profissional de saúde ou nutricionista para avaliar alimentação, histórico de peso e possíveis causas, especialmente se houve emagrecimento sem intenção.'};
  if(v<25)return {titulo:cat,classe:'good',explicacao:'Parabéns! O IMC está dentro da faixa de referência utilizada para adultos.',implicacao:'Esse resultado é um indicador favorável dentro desta triagem. Ainda assim, o IMC não mede diretamente a gordura corporal nem avalia sozinho pressão arterial, glicemia, condicionamento ou outros aspectos da saúde.',recomendacao:'Continue mantendo hábitos saudáveis, alimentação variada, sono adequado e atividade física regular. Acompanhe também outros indicadores de saúde.'};
@@ -260,14 +335,51 @@ function atualizarPreviewFlexibilidade(){
  if(!a.registrado){el.textContent='O melhor resultado entre as duas tentativas será utilizado para a classificação, quando houver tabela de referência para a faixa etária.';return;}
  el.innerHTML=`<strong>Melhor resultado: ${a.valor.toFixed(1).replace('.',',')} cm</strong><br>${a.titulo}. ${a.explicacao}`;
 }
+// Percentual de gordura pediátrico: pontos P2, P85 e P95 publicados por McCarthy et al. (2006), sexo e idade (5–18 anos).
+// O estudo original utilizou bioimpedância; a referência deve ser interpretada com cautela conforme o método de avaliação.
+const gorduraMcCarthy={
+ Masculino:{
+  5:[12.2,18.6,21.4],6:[12.4,19.5,22.7],7:[12.6,20.4,24.1],8:[12.7,21.3,25.5],9:[12.8,22.2,26.8],
+  10:[12.8,22.8,27.9],11:[12.6,23.0,28.3],12:[12.1,22.7,27.9],13:[11.5,22.0,27.0],14:[10.9,21.3,25.9],
+  15:[10.4,20.7,25.0],16:[10.1,20.3,24.3],17:[9.8,20.1,23.9],18:[9.6,20.1,23.6]
+ },
+ Feminino:{
+  5:[13.8,21.5,24.3],6:[14.4,23.0,26.2],7:[14.9,24.5,28.0],8:[15.3,26.0,29.7],9:[15.7,27.2,31.2],
+  10:[16.0,28.2,32.2],11:[16.1,28.8,32.8],12:[16.1,29.1,33.1],13:[16.1,29.4,33.3],14:[16.0,29.6,33.6],
+  15:[15.7,29.9,33.8],16:[15.5,30.1,34.1],17:[15.1,30.4,34.4],18:[14.7,30.8,34.8]
+ }
+};
+// Gallagher et al. (2000), valores estimados de gordura corporal equivalentes a categorias de IMC por sexo e faixa etária.
+// Limites: IMC <18,5; IMC >=25; IMC >=30. São equivalências estimadas, não diagnóstico direto de adiposidade.
+const gorduraGallagher={
+ Masculino:{'20-39':[8,20,25],'40-59':[11,22,28],'60-79':[13,25,30]},
+ Feminino:{'20-39':[21,33,39],'40-59':[23,34,40],'60-79':[24,36,42]}
+};
 function classificacaoGordura(r){
- if(r.gordura===''||r.gordura===null)return {titulo:'Percentual não informado',classe:'info',explicacao:'Informe o percentual e o método de avaliação para interpretar este indicador.',implicacao:'Sem o percentual, não há estimativa de massa de gordura e massa livre de gordura.',recomendacao:'Registre o resultado e o método utilizado, caso a medida tenha sido realizada.'};
- const g=Number(String(r.gordura).replace(',','.')),i=Number(r.idade),fem=r.sexo==='Feminino';
- if(i<20)return {titulo:'Referência pediátrica necessária',classe:'info',explicacao:'O percentual foi registrado, mas não será classificado com pontos de corte de adultos.',implicacao:'Em crianças e adolescentes, a interpretação depende de idade, sexo, estágio de crescimento e método de medição. Aplicar limites adultos pode gerar classificação incorreta.',recomendacao:'Utilize uma referência pediátrica validada para o método aplicado e interprete junto ao crescimento e ao desenvolvimento.'};
- let limite=null;if(i<=39)limite=fem?35:25;else if(i<=59)limite=fem?38:28;else if(i<=79)limite=fem?42:30;
- if(limite===null)return {titulo:'Referência específica necessária',classe:'info',explicacao:'Para esta idade, o aplicativo não aplica os pontos de corte de gordura corporal configurados.',implicacao:'O percentual isolado não permite estimar a condição de saúde sem referência adequada.',recomendacao:'Solicite interpretação por profissional que considere idade, sexo, método e contexto clínico.'};
- if(g>=limite)return {titulo:'Acima do ponto de corte de triagem',classe:'warn',limite,explicacao:`O resultado (${g.toFixed(1).replace('.',',')}%) está no ponto de corte ou acima dele para adiposidade elevada nesta faixa etária e sexo.`,implicacao:'Maior adiposidade pode estar associada a alterações cardiometabólicas, mas o percentual não confirma doença nem determina sozinho o risco individual. Bioimpedância e dobras cutâneas, por exemplo, têm margens de erro e dependem do protocolo.',recomendacao:'Converse com profissional de saúde ou Educação Física habilitado para revisar o método e considerar cintura, pressão arterial, histórico e outros indicadores. Evite conclusões ou metas baseadas somente neste número.'};
- return {titulo:'Abaixo do ponto de corte de triagem',classe:'good',limite,explicacao:`Parabéns! O resultado (${g.toFixed(1).replace('.',',')}%) está abaixo do ponto de corte utilizado para triagem de adiposidade elevada nesta faixa etária e sexo.`,implicacao:'É um resultado favorável em relação ao ponto de corte superior utilizado nesta triagem. Porém, essa referência não avalia todos os possíveis valores baixos de gordura corporal e não permite afirmar, sozinha, que o percentual seja ideal ou que todos os aspectos da saúde estejam adequados.',recomendacao:'Continue com hábitos sustentáveis e acompanhe o indicador sempre pelo mesmo método e protocolo. Considere também condicionamento, força, alimentação, sono e outros indicadores.'};
+ if(r.gordura===''||r.gordura===null||r.gordura===undefined)return {titulo:'Percentual não informado',classe:'info',explicacao:'Informe o percentual e o método de avaliação para interpretar este indicador.',implicacao:'Sem o percentual, não há estimativa de massa de gordura e massa livre de gordura.',recomendacao:'Registre o resultado e o método utilizado, caso a medida tenha sido realizada.'};
+ const g=Number(String(r.gordura).replace(',','.')),i=Number(r.idade),fem=r.sexo==='Feminino',sexo=fem?'Feminino':'Masculino',metodo=r.metodoGordura||'não informado';
+ if(!Number.isFinite(g)||g<0||g>100)return {titulo:'Percentual inválido',classe:'info',explicacao:'O percentual de gordura precisa estar entre 0 e 100%.',implicacao:'Um valor inválido não permite estimar a composição corporal.',recomendacao:'Confira o equipamento, a unidade e o resultado digitado.'};
+ if(i>=5&&i<=18){
+  const limites=gorduraMcCarthy[sexo][i];
+  const [p2,p85,p95]=limites;
+  const base=`Referência McCarthy et al. (2006), idade ${i} anos, sexo ${sexo.toLowerCase()}: P2=${p2}%, P85=${p85}% e P95=${p95}%.`;
+  const cautela=` Método informado: ${metodo}. A curva original foi construída com bioimpedância em crianças e adolescentes de 5 a 18 anos; diferenças entre aparelhos e métodos podem alterar o resultado.`;
+  if(g<p2)return {titulo:'Abaixo do percentil 2 — baixa adiposidade',classe:'warn',explicacao:`O percentual (${g.toFixed(1).replace('.',',')}%) está abaixo do P2 desta referência. ${base}${cautela}`,implicacao:'Um percentual muito baixo pode estar relacionado a reservas de gordura reduzidas, ingestão energética insuficiente ou outras condições, mas não identifica sozinho a causa.',recomendacao:'Avalie crescimento, alimentação, rotina esportiva e histórico com pediatra ou nutricionista. Não tente aumentar ou reduzir peso sem orientação.'};
+  if(g<p85)return {titulo:'Faixa de referência (P2 a P85)',classe:'good',explicacao:`Parabéns! O percentual (${g.toFixed(1).replace('.',',')}%) está entre o P2 e abaixo do P85 para idade e sexo. ${base}${cautela}`,implicacao:'O resultado está dentro da faixa de referência desta tabela. Isso é favorável para este indicador, mas não avalia sozinho a saúde, o crescimento ou a aptidão física.',recomendacao:'Continue com hábitos saudáveis, alimentação suficiente e variada, sono adequado e atividades físicas prazerosas. Acompanhe o crescimento ao longo do tempo.'};
+  if(g<p95)return {titulo:'Acima do percentil 85 — excesso de adiposidade',classe:'warn',explicacao:`O percentual (${g.toFixed(1).replace('.',',')}%) está entre o P85 e abaixo do P95. ${base}${cautela}`,implicacao:'A faixa P85–P95 foi utilizada como referência para excesso de tecido adiposo. Em nível populacional, maior adiposidade pode acompanhar maior probabilidade de alterações metabólicas, mas não confirma doença em uma pessoa.',recomendacao:'Converse com a família e equipe de saúde para avaliar alimentação, crescimento, sono e atividade física. Prefira ações saudáveis e acolhedoras, sem dietas restritivas ou comentários estigmatizantes.'};
+  return {titulo:'Percentil 95 ou superior — adiposidade muito elevada',classe:'warn',explicacao:`O percentual (${g.toFixed(1).replace('.',',')}%) está no P95 ou acima dele. ${base}${cautela}`,implicacao:'Na referência de McCarthy, o P95 foi utilizado como limite superior associado à categoria de obesidade. Trata-se de classificação estatística de triagem, não de diagnóstico clínico.',recomendacao:'Recomenda-se avaliação individual com pediatra ou nutricionista, considerando o crescimento, o estágio de desenvolvimento, o método de medição e outros indicadores. O cuidado deve ser gradual, familiar e sem estigmatização.'};
+ }
+ if(i>=20&&i<=79){
+  const faixa=i<=39?'20-39':i<=59?'40-59':'60-79',limites=gorduraGallagher[sexo][faixa],[baixo,alto,obesidade]=limites;
+  const base=`Referência estimada de Gallagher et al. (2000), ${sexo.toLowerCase()}, ${faixa} anos. Limites aproximados: ${baixo}% (equivalente a IMC abaixo de 18,5), ${alto}% (equivalente a IMC a partir de 25) e ${obesidade}% (equivalente a IMC a partir de 30).`;
+  const cautela=` Método informado: ${metodo}. As equivalências variam com método, etnia, composição corporal e contexto individual.`;
+  if(g<baixo)return {titulo:'Abaixo da faixa de referência estimada',classe:'warn',explicacao:`O percentual (${g.toFixed(1).replace('.',',')}%) está abaixo do limite inferior estimado. ${base}${cautela}`,implicacao:'Percentuais muito baixos podem acompanhar reservas energéticas reduzidas ou baixa disponibilidade energética, sobretudo quando há perda de peso, fadiga ou alterações hormonais. O valor isolado não determina a condição clínica.',recomendacao:'Se houver perda de peso involuntária, cansaço persistente ou restrição alimentar, procure avaliação de profissional de saúde ou nutricionista.'};
+  if(g<alto)return {titulo:'Faixa de referência estimada',classe:'good',explicacao:`Parabéns! O percentual (${g.toFixed(1).replace('.',',')}%) está na faixa estimada correspondente ao IMC de referência. ${base}${cautela}`,implicacao:'É um resultado favorável em relação a esta referência estimada. O percentual de gordura, sozinho, não confirma saúde metabólica nem condição física geral.',recomendacao:'Continue mantendo atividade física regular, alimentação variada, sono adequado e avaliações periódicas com o mesmo método.'};
+  if(g<obesidade)return {titulo:'Acima da faixa de referência estimada',classe:'warn',explicacao:`O percentual (${g.toFixed(1).replace('.',',')}%) está acima da faixa estimada correspondente ao IMC de referência, mas abaixo do limite equivalente a IMC 30. ${base}${cautela}`,implicacao:'Maior adiposidade pode estar associada, em nível populacional, a maior probabilidade de alterações cardiometabólicas. Esta equivalência não mede diretamente o risco individual.',recomendacao:'Considere avaliação individual com profissional de saúde, observando também circunferência abdominal, pressão arterial, glicemia, histórico e método utilizado. Priorize hábitos sustentáveis.'};
+  return {titulo:'Adiposidade elevada — faixa equivalente a IMC ≥30',classe:'warn',explicacao:`O percentual (${g.toFixed(1).replace('.',',')}%) alcançou o limite estimado equivalente a IMC ≥30. ${base}${cautela}`,implicacao:'Essa faixa pode estar associada a maior probabilidade de alterações cardiometabólicas, mas não diagnostica obesidade nem determina sozinha o risco de uma pessoa.',recomendacao:'Recomenda-se avaliação individual com profissional de saúde para interpretar composição corporal e demais fatores de risco. Evite dietas restritivas ou metas sem acompanhamento.'};
+ }
+ const faixa=i<5?'abaixo de 5 anos':i===19?'19 anos':i>=80?'80 anos ou mais':'idade não informada';
+ return {titulo:'Referência específica necessária',classe:'info',explicacao:`O percentual foi registrado, mas as tabelas configuradas não classificam ${faixa}. McCarthy abrange 5–18 anos e Gallagher 20–79 anos.`,implicacao:'Sem tabela compatível com a idade e o método, não é adequado afirmar se o percentual está baixo, adequado ou elevado.',recomendacao:'Registre o valor e solicite interpretação por profissional que utilize referência validada para essa faixa etária e o método empregado.'};
 }
 function avaliarAtividade(r){
  const i=Number(r.idade),mins=Number(r.minutosSemana)||0,fort=Number(r.fortalecimento)||0,int=r.intensidade||'Moderada';
@@ -295,7 +407,7 @@ function avaliarAtividade(r){
 }
 
 function recomendacao(i,intensidade,minutos){if(i<1)return 'A recomendação depende da idade e do desenvolvimento; avaliação individual necessária.';if(i<5)return 'Crianças pequenas: atividade física variada e brincadeiras ativas distribuídas ao longo do dia, conforme idade.';if(i<18)return 'Crianças e adolescentes: média de pelo menos 60 minutos/dia de atividade física moderada a vigorosa ao longo da semana; incluir atividades vigorosas e de fortalecimento muscular e ósseo.';if(i<65)return 'Adultos: 150–300 minutos/semana de atividade aeróbica moderada, ou 75–150 minutos vigorosa, além de fortalecimento muscular em 2 ou mais dias/semana.';return 'Idosos: 150–300 minutos/semana de atividade moderada (ou equivalente), fortalecimento muscular e atividades multicomponentes com equilíbrio, adaptadas à capacidade funcional.'}
-function coletar(){let i=idade($('nascimento').value,$('data').value),peso=num('massa'),alt=num('estatura')/100,g=$('gordura').value===''?null:num('gordura');let r={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),...Object.fromEntries(fields.map(f=>[f,$(f).value])),idade:i,imc:peso>0&&alt>0?peso/(alt*alt):null,massaGorda:g!==null?peso*g/100:null,massaMagra:g!==null?peso*(1-g/100):null,minutosSemana:num('dias')*num('minutos'),criadoEm:new Date().toISOString()};r.flexibilidadeMelhor=melhorFlexibilidade(r);return r}
+function coletar(){let i=idade($('nascimento').value,$('data').value),peso=num('massa'),alt=num('estatura')/100,g=$('gordura').value===''?null:num('gordura');let r={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),...Object.fromEntries(fields.map(f=>[f,$(f).value])),idade:i,idadeMeses:idadeMeses($('nascimento').value,$('data').value),imc:peso>0&&alt>0?peso/(alt*alt):null,massaGorda:g!==null?peso*g/100:null,massaMagra:g!==null?peso*(1-g/100):null,minutosSemana:num('dias')*num('minutos'),criadoEm:new Date().toISOString()};r.flexibilidadeMelhor=melhorFlexibilidade(r);return r}
 function validar(r){if(!$('autorizacaoDados').checked){alert('Confirme que a avaliação está autorizada para a finalidade informada.');return false}if(!r.nome.trim()||!r.nascimento||!r.sexo||r.idade<0||!(num('massa')>0)||!(num('estatura')>0)){alert('Preencha nome, nascimento, sexo, massa corporal e estatura com valores válidos.');return false}if(r.perfil==='Aluno'&&(!r.serie.trim()||!r.turma.trim())){alert('Informe série e turma do aluno.');return false}if(r.perfil==='Professor'&&!r.disciplina.trim()){alert('Informe a disciplina do professor.');return false}if(r.gordura!==''&&(num('gordura')<0||num('gordura')>100)){alert('O percentual de gordura deve estar entre 0 e 100.');return false}return true}
 
 function exibirRelatorio(r, targetId='relatorioConteudo'){
@@ -310,7 +422,7 @@ function exibirRelatorio(r, targetId='relatorioConteudo'){
  <div class="metric teal"><span>MASSA CORPORAL</span><b>${esc(r.massa)} kg</b></div><div class="metric teal"><span>ESTATURA</span><b>${esc(r.estatura)} cm</b></div>
  <div class="metric orange"><span>IMC</span><b>${imc}</b></div><div class="metric ${gf.classe==='good'?'green':gf.classe==='warn'?'orange':'teal'}"><span>GORDURA CORPORAL</span><b>${esc(gordura)}</b></div></div>
  <p style="font-size:13px;color:#d5eaf1">Massa corporal e estatura são medidas básicas. Isoladamente, não indicam se a condição de saúde está adequada; sua relação é analisada pelo IMC e deve ser contextualizada.</p>
- <h3 style="margin-top:20px">2. Interpretação do IMC</h3><div class="bmi-diagnosis"><div class="eyebrow">Classificação de referência — não é diagnóstico</div><div class="diagnosis-word">${esc(im.titulo)}</div><p>IMC calculado: ${imc} kg/m².</p></div>
+ <h3 style="margin-top:20px">2. Interpretação do IMC</h3><div class="bmi-diagnosis"><div class="eyebrow">Classificação de referência — não é diagnóstico</div><div class="diagnosis-word">${esc(im.titulo)}</div><p>IMC calculado: ${imc} kg/m².</p>${im.referencia?`<p style="margin:7px 0 0;font-size:13px">Referência: ${esc(im.referencia)}.</p>`:''}${im.detalhe?`<p style="margin:7px 0 0;font-size:13px;font-weight:700">${esc(im.detalhe)}</p>`:''}</div>
  ${cardStatus(im)}
  <h3 style="margin-top:22px">3. Percentual de gordura e composição corporal</h3>
  ${cardStatus(gf)}
@@ -325,7 +437,7 @@ function exibirRelatorio(r, targetId='relatorioConteudo'){
  <p style="font-size:13px;color:#d5eaf1">Dados informados: ${esc(r.dias)} dias/semana, ${esc(r.minutos)} min/dia, intensidade predominante ${esc(String(r.intensidade||'não informada').toLowerCase())}, ${esc(r.fortalecimento||0)} dia(s) de fortalecimento. Tipo: ${esc(r.tipoAtividade||'não informado')}.</p>
  ${resumoRecomendacoes(r,im,gf,flex,af)}
  <div style="background:#ffffff18;padding:13px;border-radius:11px;margin-top:12px"><b>Como ler este relatório</b><p style="margin:6px 0">As mensagens indicam como os resultados se relacionam com referências e recomendações selecionadas. Um indicador isolado não confirma doença, aptidão completa nem risco individual. O IMC não mede diretamente gordura corporal; a estimativa de gordura depende do método; o teste de sentar e alcançar observa principalmente a flexibilidade da cadeia posterior; e a atividade física é analisada com base nas informações declaradas.</p></div>
- <p style="font-size:12px;color:#d5eaf1;margin-top:20px">Relatório educativo e de triagem, não diagnóstico clínico. IMC adulto: categorias de rastreio para pessoas a partir de 20 anos; para menores de 20 anos é necessária curva de IMC-para-idade. Percentual de gordura: pontos de corte de triagem por idade e sexo; dependem do método e não definem uma faixa ideal universal. Flexibilidade: referências PROESP-Br (6–17 anos) e CSEP-PATH (20–69 anos), com protocolos diferentes. Recomendações de atividade física baseadas nas diretrizes da OMS. Referências: <a href="https://www.cdc.gov/bmi/adult-calculator/bmi-categories.html" target="_blank" rel="noopener">CDC — categorias de IMC adulto</a>; <a href="https://www.cdc.gov/growth-chart-training/hcp/using-bmi/plotting-interpreting-bmi.html" target="_blank" rel="noopener">CDC — IMC por idade</a>; <a href="https://www.who.int/news-room/fact-sheets/detail/physical-activity/" target="_blank" rel="noopener">OMS — atividade física</a>; Gallagher et al. (2000), referência de percentual de gordura.</p>
+ <p style="font-size:12px;color:#d5eaf1;margin-top:20px">Relatório educativo e de triagem, não diagnóstico clínico. IMC: OMS 2007 para 5–19 anos (escore-Z por sexo e mês de idade) e categorias adultas para 20 anos ou mais; abaixo de 5 anos e nas idades fora da tabela, exige referência específica. Percentual de gordura: McCarthy et al. (2006), percentis P2/P85/P95 para 5–18 anos; Gallagher et al. (2000), equivalências estimadas por sexo e idade para 20–79 anos. A interpretação depende do método e não substitui avaliação profissional. Flexibilidade: PROESP-Br (6–17 anos) e CSEP-PATH (20–69 anos), com protocolos diferentes. Recomendações de atividade física baseadas nas diretrizes da OMS. Referências: <a href="https://www.who.int/tools/growth-reference-data-for-5to19-years/indicators/bmi-for-age" target="_blank" rel="noopener">OMS — IMC-para-idade 5–19 anos</a>; <a href="https://pubmed.ncbi.nlm.nih.gov/16570089/" target="_blank" rel="noopener">McCarthy et al. (2006) — curvas de gordura corporal infantil</a>; <a href="https://pubmed.ncbi.nlm.nih.gov/10966886/" target="_blank" rel="noopener">Gallagher et al. (2000) — faixas de gordura corporal em adultos</a>; <a href="https://www.who.int/news-room/fact-sheets/detail/physical-activity/" target="_blank" rel="noopener">OMS — atividade física</a>.</p>
  <div style="border-top:1px solid #ffffff55;margin-top:20px;padding-top:10px;font-size:11px;color:#d5eaf1">MOVIMENTO & SAÚDE · Avaliação individual · Registro ${esc(String(r.id).slice(0,8))}</div>`;
 }
 function renderHistoricoInicial(){let rs=registros();$('tabelaHistorico').innerHTML=rs.length?`<table><thead><tr><th>Nome</th><th>Data</th><th>Idade</th><th>IMC</th><th>Flex (cm)</th><th>Ação</th></tr></thead><tbody>${rs.map(r=>`<tr><td>${esc(r.nome)}</td><td>${r.data?new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td><td>${r.idade}</td><td>${r.imc?.toFixed(1).replace('.',',')||'—'}</td><td>${(r.flexibilidadeMelhor??melhorFlexibilidade(r))!==null?(r.flexibilidadeMelhor??melhorFlexibilidade(r)).toFixed(1).replace('.',','):'—'}</td><td><button data-open="${r.id}" style="padding:7px 10px">Ver</button></td></tr>`).join('')}</tbody></table>`:'<p class="muted">Nenhuma avaliação salva neste navegador.</p>';$('tabelaHistorico').querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{let r=registros().find(x=>x.id===b.dataset.open);if(r){exibirRelatorio(r);abrir('relatorio')}})}
@@ -335,7 +447,7 @@ $('nascimento').addEventListener('change',atualizarInstrucoesFlexibilidade);$('d
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>abrir(b.dataset.tab));
 $('salvar').onclick=()=>{let r=coletar();if(!validar(r))return;let rs=registros();rs.push(r);salvarRegistros(rs);exibirRelatorio(r);abrir('relatorio');alert('Avaliação salva neste navegador. Faça cópias de segurança regularmente.')};
 $('limpar').onclick=()=>{fields.forEach(f=>{if(f==='data')$(f).value=dataLocalISO(today);else if(f==='dias')$(f).value='3';else if(f==='minutos')$(f).value='30';else if(f==='fortalecimento')$(f).value='0';else if(f==='perfil')$(f).value='Aluno';else if(f==='turno')$(f).value='Manhã';else if(f==='instituicao')$(f).value='Escola Zulmira de Novais';else if(f==='serie')$(f).value='6º ano';else if(f==='turma')$(f).value='A';else if(f==='intensidade')$(f).value='Moderada';else $(f).value=''});mudarPerfil();$('autorizacaoDados').checked=false;atualizarInstrucoesFlexibilidade()};
-$('exportar').onclick=()=>{let rs=registros();if(!rs.length){alert('Não há registros para exportar.');return}let cols=['nome','nascimento','idade','sexo','data','perfil','instituicao','disciplina','serie','turma','turno','massa','estatura','imc','gordura','metodoGordura','massaGorda','massaMagra','intensidade','tipoAtividade','dias','minutos','fortalecimento','minutosSemana','flexibilidade1','flexibilidade2','flexibilidadeMelhor'];let csv=[cols.join(';'),...rs.map(r=>cols.map(c=>{let v=r[c]??'';return '"'+String(v).replaceAll('"','""')+'"'}).join(';'))].join('\r\n');let blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='avaliacoes_antropometricas.csv';a.click();URL.revokeObjectURL(a.href)};
+$('exportar').onclick=()=>{let rs=registros();if(!rs.length){alert('Não há registros para exportar.');return}let cols=['nome','nascimento','idade','idadeMeses','sexo','data','perfil','instituicao','disciplina','serie','turma','turno','massa','estatura','imc','gordura','metodoGordura','massaGorda','massaMagra','intensidade','tipoAtividade','dias','minutos','fortalecimento','minutosSemana','flexibilidade1','flexibilidade2','flexibilidadeMelhor'];let csv=[cols.join(';'),...rs.map(r=>cols.map(c=>{let v=r[c]??'';return '"'+String(v).replaceAll('"','""')+'"'}).join(';'))].join('\r\n');let blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='avaliacoes_antropometricas.csv';a.click();URL.revokeObjectURL(a.href)};
 $('backup').onclick=()=>{let blob=new Blob([JSON.stringify(registros(),null,2)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='backup_movimento_saude.json';a.click();URL.revokeObjectURL(a.href)};
 $('imprimir').onclick=()=>window.print();
 
@@ -417,7 +529,7 @@ function gerarResumoRecomendacoes(r,im,gf,flex,af){return resumoRecomendacoes(r,
 function gerarTokenSeguro(){const bytes=new Uint8Array(24);crypto.getRandomValues(bytes);return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');}
 function registroParaCompartilhar(r){
  // Não envia a data completa de nascimento, e-mail ou identificadores de turma.
- return {id:r.id,nome:r.nome,idade:r.idade,sexo:r.sexo,data:r.data,perfil:'Avaliado',instituicao:'',massa:r.massa,estatura:r.estatura,gordura:r.gordura,metodoGordura:r.metodoGordura,imc:r.imc,massaGorda:r.massaGorda,massaMagra:r.massaMagra,intensidade:r.intensidade,tipoAtividade:r.tipoAtividade,dias:r.dias,minutos:r.minutos,fortalecimento:r.fortalecimento,minutosSemana:r.minutosSemana,flexibilidade1:r.flexibilidade1,flexibilidade2:r.flexibilidade2,flexibilidadeMelhor:r.flexibilidadeMelhor};
+ return {id:r.id,nome:r.nome,idade:r.idade,idadeMeses:r.idadeMeses??idadeMeses(r.nascimento,r.data),sexo:r.sexo,data:r.data,perfil:'Avaliado',instituicao:'',massa:r.massa,estatura:r.estatura,gordura:r.gordura,metodoGordura:r.metodoGordura,imc:r.imc,massaGorda:r.massaGorda,massaMagra:r.massaMagra,intensidade:r.intensidade,tipoAtividade:r.tipoAtividade,dias:r.dias,minutos:r.minutos,fortalecimento:r.fortalecimento,minutosSemana:r.minutosSemana,flexibilidade1:r.flexibilidade1,flexibilidade2:r.flexibilidade2,flexibilidadeMelhor:r.flexibilidadeMelhor};
 }
 async function gerarCompartilhamento(){
  if(!modoNuvem||!usuarioAtual||!avaliacaoAtual){setShareMessage('Entre na conta e abra um relatório salvo na nuvem para compartilhar.','error');return;}
